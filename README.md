@@ -1,6 +1,6 @@
 ﻿# Puget Sound Marine Forecast API
 
-A production-ready Python API that scrapes and serves marine forecast data for Puget Sound from the University of Washington's forecast text files. Ready for deployment to Azure Container Apps and optimized for personal use with Home Assistant and Dakboard.
+A Python API that scrapes and serves marine forecast data for Puget Sound from the University of Washington and NOAA. Intended to be easily consumed as a RESTful call from Home Assistant, Dakboard, etc.
 
 ##  Quick Start 🚀
 
@@ -34,7 +34,9 @@ python main.py
 
 ##  About
 
-This project provides a JSON API for accessing Puget Sound marine weather forecasts, making it easy for applications to consume structured forecast data.
+The University of Washington does an excellent job of providing accurate and timely forecasts for Washington State marine areas. Unfortunately, those forecasts are provided only in unstructured formats from the UW and NOAA, making them difficult to use in other contexts. 
+
+This project attempts to resolve this issue by ingesting the raw forecast texts, parsing them, and providing a structured JSON API for access, making it easy for applications to consume the structured forecast data.
 
 ##  Features (Completed ✅)
 
@@ -42,89 +44,39 @@ This project provides a JSON API for accessing Puget Sound marine weather foreca
 - [x] Parse forecast data into structured format ✅  
 - [x] Provide RESTful JSON API endpoints ✅
 - [x] Automatic forecast updates (120-minute background cache - optimized for personal use) ✅
-- [x] Deploy to Azure Container Apps with Infrastructure as Code ✅
-- [x] Complete containerization with Docker ✅
-- [x] Cost optimization for personal use (scale-to-zero, optimized resources) ✅
-- [x] Production security with rate limiting, input validation, CORS ✅
-- [x] Auto-scaling with scale-to-zero capability ✅
-- [x] Application monitoring with Azure Application Insights ✅
-- [ ] Historical data storage (future enhancement)
+- [ ] Deploy as Azure Container App (or similar serverless solution)
+- [ ] Historical data storage
 
-##  Tech Stack (Production Ready)
+##  Tech Stack (Implemented)
 
 **Backend:** Python 3.11+ with FastAPI ✅  
-**Dependencies:** httpx, python-dateutil, uvicorn, slowapi ✅  
+**Dependencies:** httpx, python-dateutil, uvicorn ✅  
 **Security:** Rate limiting, input validation, CORS protection ✅  
 **Caching:** In-memory cache with 120-minute background updates (personal use optimized) ✅  
 **Performance:** Lightning-fast cached responses (<100ms) ⚡  
-**Deployment:** Azure Container Apps with auto-scaling ✅  
-**Infrastructure:** Azure Bicep templates with cost optimization ✅  
-**Containerization:** Docker with health checks and security hardening ✅  
-**Monitoring:** Azure Application Insights with comprehensive logging ✅  
+**Deployment:** Ready for Azure Functions, Azure Container Apps, or Azure App Service  
 **Data Format:** Real-time JSON from NOAA text files ✅  
-**Parsing:** Advanced regex with 100% wind data accuracy ✅
+**Parsing:** Advanced regex with estimated 100% wind data accuracy ✅
 
 ##  API Endpoints ✅
 
 - `GET /` - API status and cache information
-- `GET /health` - Container health check endpoint
 - `GET /zones` - List all 14 available forecast zones  
-- `GET /forecast/{zone}` - Get parsed forecast for specific zone (cached) ⚡
-- `GET /forecast/` - All forecasts for all 14 zones (cached) ⚡
+- `GET /forecast/{zone}` - Get parsed forecast for specific zone (cached)
+- `GET /forecast/` - All forecasts for all 14 zones (cached)
 - `GET /cache/status` - Detailed cache health and statistics  
 - `POST /cache/refresh` - Manually trigger cache refresh
 
 ##  Supported Zones ✅
 
 All 14 NOAA marine forecast zones including:
-- **PZZ133**: Northern Inland Waters Including The San Juan Islands ⭐
-- **PZZ135**: Puget Sound and Hood Canal ⭐  
+- **PZZ133**: Northern Inland Waters Including The San Juan Islands
+- **PZZ135**: Puget Sound and Hood Canal
 - PZZ100, PZZ110, PZZ130-132, PZZ134, PZZ150, PZZ153, PZZ156, PZZ170, PZZ173, PZZ176
 
 ##  Project Status
 
-🎉 **API Complete & Production Ready!** - Ready for Azure deployment!
-
-##  Azure Deployment 🚀
-
-This project includes complete Infrastructure as Code for Azure deployment:
-
-### Prerequisites
-- Azure subscription
-- Azure CLI installed and logged in
-- Azure Developer CLI (azd) installed
-- Docker Desktop (for containerization)
-
-### Quick Deploy to Azure Container Apps
-```bash
-# Clone and navigate to project
-git clone https://github.com/longman391/puget-sound-marine-forecast.git
-cd puget-sound-marine-forecast
-
-# Initialize azd (first time only)
-azd init
-
-# Deploy infrastructure and application
-azd up
-```
-
-### What Gets Deployed
-- **Azure Container Apps**: Auto-scaling container hosting
-- **Azure Container Registry**: Private container image storage  
-- **Azure Application Insights**: Application monitoring and logging
-- **Azure Log Analytics**: Centralized log management
-- **Managed Identity**: Secure service-to-service authentication
-
-### Cost Optimization Features
-- Scale-to-zero capability (no cost when not in use)
-- Optimized resource allocation (0.25 CPU cores, 0.5GB RAM)
-- Efficient caching strategy (120-minute intervals)
-- Perfect for personal use or low-traffic deployments
-
-### Manual Deployment Options
-- Azure Container Apps (recommended)
-- Azure App Service 
-- Azure Functions (with modifications for stateless operation)
+🎉 **API Complete & Working**
 
 ##  Security Features ✅
 
@@ -141,7 +93,7 @@ azd up
 
 ##  Data Source
 
-- University of Washington Marine Weather Forecast
+- University of Washington Marine Weather Forecast via NOAA
 - Text files updated regularly by UW meteorology department
 
 ##  Contributing
