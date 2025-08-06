@@ -41,7 +41,7 @@ This project provides a JSON API for accessing Puget Sound marine weather foreca
 - [x] Scrape UW marine forecast text files ✅
 - [x] Parse forecast data into structured format ✅  
 - [x] Provide RESTful JSON API endpoints ✅
-- [x] Automatic forecast updates (30-minute background cache) ✅
+- [x] Automatic forecast updates (120-minute background cache - optimized for personal use) ✅
 - [ ] Deploy as Azure Function (or similar serverless solution)
 - [ ] Historical data storage
 
@@ -50,7 +50,7 @@ This project provides a JSON API for accessing Puget Sound marine weather foreca
 **Backend:** Python 3.11+ with FastAPI ✅  
 **Dependencies:** httpx, python-dateutil, uvicorn ✅  
 **Security:** Rate limiting, input validation, CORS protection ✅  
-**Caching:** In-memory cache with 30-minute background updates ✅  
+**Caching:** In-memory cache with 120-minute background updates (personal use optimized) ✅  
 **Performance:** Lightning-fast cached responses (<100ms) ⚡  
 **Deployment:** Ready for Azure Functions, Azure Container Apps, or Azure App Service  
 **Data Format:** Real-time JSON from NOAA text files ✅  
@@ -78,9 +78,10 @@ All 14 NOAA marine forecast zones including:
 
 ##  Security Features ✅
 
-- **Rate Limiting**: Different limits per endpoint to prevent abuse
-  - General endpoints: 30-60 requests/minute
-  - Cache refresh: 3 requests/minute (expensive operation)
+- **Rate Limiting**: Optimized for personal use
+  - General endpoints: 100-500 requests/hour
+  - Cache refresh: 10 requests/hour
+  - Cache status: 60 requests/hour
 - **Input Validation**: Strict zone format validation with regex patterns
 - **Error Handling**: Secure error responses that don't leak internal information
 - **CORS Protection**: Configurable cross-origin request policies
