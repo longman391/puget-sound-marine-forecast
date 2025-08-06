@@ -35,7 +35,7 @@ forecast_cache = {}
 cache_metadata = {
     "last_updated": None,
     "next_update": None,
-    "update_interval_minutes": 30,
+    "update_interval_minutes": 120,  # Increased from 30 to 120 minutes for personal use
     "total_updates": 0,
     "last_update_duration": None
 }
@@ -127,7 +127,7 @@ async def background_update_task():
     while True:
         try:
             await update_forecast_cache()
-            # Wait 30 minutes before next update
+            # Wait 120 minutes before next update (optimized for personal use)
             await asyncio.sleep(cache_metadata["update_interval_minutes"] * 60)
         except Exception as e:
             print(f"Error in background update task: {str(e)}")
@@ -145,7 +145,7 @@ async def lifespan(app: FastAPI):
     
     # Start background update task
     task = asyncio.create_task(background_update_task())
-    print("Background forecast update task started (updates every 30 minutes)")
+    print("Background forecast update task started (updates every 120 minutes - optimized for personal use)")
     
     yield
     
@@ -221,7 +221,7 @@ def validate_zone_input(zone: str) -> str:
     return zone_clean
 
 @app.get("/")
-@limiter.limit("30/minute")
+@limiter.limit("100/hour")  # Increased from 30/minute for personal use
 async def root(request: Request):
     """API status and information"""
     try:
@@ -246,8 +246,27 @@ async def root(request: Request):
             detail="Unable to retrieve API status"
         )
 
+@app.get("/health")
+async def health_check():
+    """Health check endpoint for container monitoring"""
+    try:
+        # Simple health check - verify cache is functioning
+        healthy = len(forecast_cache) > 0 and cache_metadata.get("last_updated") is not None
+        if healthy:
+            return {"status": "healthy", "timestamp": datetime.now().isoformat()}
+        else:
+            return JSONResponse(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                content={"status": "unhealthy", "reason": "cache not initialized"}
+            )
+    except Exception:
+        return JSONResponse(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            content={"status": "unhealthy", "reason": "health check failed"}
+        )
+
 @app.get("/zones")
-@limiter.limit("60/minute")
+@limiter.limit("200/hour")  # Increased from 60/minute for personal use
 async def get_zones(request: Request):
     """Get list of all available forecast zones"""
     try:
@@ -260,7 +279,7 @@ async def get_zones(request: Request):
         )
 
 @app.get("/forecast/{zone}")
-@limiter.limit("120/minute")
+@limiter.limit("500/hour")  # Increased for personal use
 async def get_forecast(request: Request, zone: str):
     """Get forecast for a specific zone (served from cache)"""
     try:
@@ -295,7 +314,7 @@ async def get_forecast(request: Request, zone: str):
         )
 
 @app.get("/forecast/")
-@limiter.limit("30/minute")
+@limiter.limit("200/hour")  # Increased for personal use
 async def get_all_forecasts(request: Request):
     """Get forecasts for all zones (served from cache)"""
     try:
@@ -340,7 +359,7 @@ async def get_all_forecasts(request: Request):
         )
 
 @app.get("/cache/status")
-@limiter.limit("10/minute")
+@limiter.limit("60/hour")  # Increased for personal use
 async def get_cache_status(request: Request):
     """Get detailed cache status and statistics"""
     try:
@@ -366,7 +385,7 @@ async def get_cache_status(request: Request):
         )
 
 @app.post("/cache/refresh")
-@limiter.limit("3/minute")  # Very restrictive - this is a potentially expensive operation
+@limiter.limit("10/hour")  # Relaxed for personal use but still controlled
 async def refresh_cache(request: Request):
     """Manually trigger a cache refresh (useful for testing)"""
     try:

@@ -1,0 +1,13 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/Azure/azure-dev/main/schemas/v1.0/azure.yaml.json
+
+name: puget-sound-marine-forecast
+infra:
+  provider: bicep
+services:
+  marine-forecast-api:
+    project: src
+    host: containerapp
+    language: python
+    docker:
+      path: ../Dockerfile
+      context: ..
