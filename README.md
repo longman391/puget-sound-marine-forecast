@@ -1,6 +1,6 @@
 ﻿# Puget Sound Marine Forecast API
 
-A Python-based API that scrapes and serves marine forecast data for Puget Sound from the University of Washington's forecast text files.
+A Python API that scrapes and serves marine forecast data for Puget Sound from the University of Washington's forecast text files. Intended to be consumed by Home Assistant and Dakboard.
 
 ##  About
 
