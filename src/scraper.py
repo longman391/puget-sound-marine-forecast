@@ -42,10 +42,23 @@ class ForecastScraper:
         """Fetch the raw text for a specific zone"""
         url = f"{self.BASE_URL}/{zone.lower()}.txt"
         
-        async with httpx.AsyncClient() as client:
-            response = await client.get(url)
-            response.raise_for_status()
-            return response.text
+        # Configure timeout and retry settings for resilience
+        timeout = httpx.Timeout(connect=10.0, read=30.0, write=10.0, pool=10.0)
+        
+        async with httpx.AsyncClient(timeout=timeout) as client:
+            try:
+                response = await client.get(url, follow_redirects=True)
+                response.raise_for_status()
+                return response.text
+            except httpx.TimeoutException:
+                logger.error(f"Timeout fetching data for zone {zone}")
+                raise
+            except httpx.HTTPStatusError as e:
+                logger.error(f"HTTP error {e.response.status_code} for zone {zone}: {e}")
+                raise
+            except Exception as e:
+                logger.error(f"Unexpected error fetching zone {zone}: {e}")
+                raise
     
     def parse_forecast_text(self, text: str, zone: str) -> MarineForecast:
         """Parse the raw forecast text into structured data"""
