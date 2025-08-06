@@ -1,6 +1,6 @@
 ﻿# Puget Sound Marine Forecast API
 
-A Python API that scrapes and serves marine forecast data for Puget Sound from the University of Washington's forecast text files. Intended to be consumed by Home Assistant and Dakboard.
+A production-ready Python API that scrapes and serves marine forecast data for Puget Sound from the University of Washington's forecast text files. Ready for deployment to Azure Container Apps and optimized for personal use with Home Assistant and Dakboard.
 
 ##  Quick Start 🚀
 
@@ -42,23 +42,32 @@ This project provides a JSON API for accessing Puget Sound marine weather foreca
 - [x] Parse forecast data into structured format ✅  
 - [x] Provide RESTful JSON API endpoints ✅
 - [x] Automatic forecast updates (120-minute background cache - optimized for personal use) ✅
-- [ ] Deploy as Azure Function (or similar serverless solution)
-- [ ] Historical data storage
+- [x] Deploy to Azure Container Apps with Infrastructure as Code ✅
+- [x] Complete containerization with Docker ✅
+- [x] Cost optimization for personal use (scale-to-zero, optimized resources) ✅
+- [x] Production security with rate limiting, input validation, CORS ✅
+- [x] Auto-scaling with scale-to-zero capability ✅
+- [x] Application monitoring with Azure Application Insights ✅
+- [ ] Historical data storage (future enhancement)
 
-##  Tech Stack (Implemented)
+##  Tech Stack (Production Ready)
 
 **Backend:** Python 3.11+ with FastAPI ✅  
-**Dependencies:** httpx, python-dateutil, uvicorn ✅  
+**Dependencies:** httpx, python-dateutil, uvicorn, slowapi ✅  
 **Security:** Rate limiting, input validation, CORS protection ✅  
 **Caching:** In-memory cache with 120-minute background updates (personal use optimized) ✅  
 **Performance:** Lightning-fast cached responses (<100ms) ⚡  
-**Deployment:** Ready for Azure Functions, Azure Container Apps, or Azure App Service  
+**Deployment:** Azure Container Apps with auto-scaling ✅  
+**Infrastructure:** Azure Bicep templates with cost optimization ✅  
+**Containerization:** Docker with health checks and security hardening ✅  
+**Monitoring:** Azure Application Insights with comprehensive logging ✅  
 **Data Format:** Real-time JSON from NOAA text files ✅  
 **Parsing:** Advanced regex with 100% wind data accuracy ✅
 
 ##  API Endpoints ✅
 
 - `GET /` - API status and cache information
+- `GET /health` - Container health check endpoint
 - `GET /zones` - List all 14 available forecast zones  
 - `GET /forecast/{zone}` - Get parsed forecast for specific zone (cached) ⚡
 - `GET /forecast/` - All forecasts for all 14 zones (cached) ⚡
@@ -74,7 +83,48 @@ All 14 NOAA marine forecast zones including:
 
 ##  Project Status
 
-🎉 **API Complete & Working!** - Ready for Azure deployment!
+🎉 **API Complete & Production Ready!** - Ready for Azure deployment!
+
+##  Azure Deployment 🚀
+
+This project includes complete Infrastructure as Code for Azure deployment:
+
+### Prerequisites
+- Azure subscription
+- Azure CLI installed and logged in
+- Azure Developer CLI (azd) installed
+- Docker Desktop (for containerization)
+
+### Quick Deploy to Azure Container Apps
+```bash
+# Clone and navigate to project
+git clone https://github.com/longman391/puget-sound-marine-forecast.git
+cd puget-sound-marine-forecast
+
+# Initialize azd (first time only)
+azd init
+
+# Deploy infrastructure and application
+azd up
+```
+
+### What Gets Deployed
+- **Azure Container Apps**: Auto-scaling container hosting
+- **Azure Container Registry**: Private container image storage  
+- **Azure Application Insights**: Application monitoring and logging
+- **Azure Log Analytics**: Centralized log management
+- **Managed Identity**: Secure service-to-service authentication
+
+### Cost Optimization Features
+- Scale-to-zero capability (no cost when not in use)
+- Optimized resource allocation (0.25 CPU cores, 0.5GB RAM)
+- Efficient caching strategy (120-minute intervals)
+- Perfect for personal use or low-traffic deployments
+
+### Manual Deployment Options
+- Azure Container Apps (recommended)
+- Azure App Service 
+- Azure Functions (with modifications for stateless operation)
 
 ##  Security Features ✅
 
