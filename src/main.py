@@ -3,7 +3,7 @@
 from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, PlainTextResponse
 from typing import Dict, List, Optional
 import httpx
 import asyncio
@@ -195,6 +195,19 @@ async def global_exception_handler(request: Request, exc: Exception):
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         content={"detail": "Internal server error"}
     )
+
+# Robots.txt to reduce 404s from crawlers
+@app.get("/robots.txt", include_in_schema=False)
+async def robots_txt():
+    """Robots policy for crawlers."""
+    rules = (
+        "User-agent: *\n"
+        "Allow: /\n"
+        "Disallow: /cache/\n"
+        "Disallow: /cache/status\n"
+        "Disallow: /cache/refresh\n"
+    )
+    return PlainTextResponse(content=rules)
 
 def validate_zone_input(zone: str) -> str:
     """Validate and sanitize zone input"""
