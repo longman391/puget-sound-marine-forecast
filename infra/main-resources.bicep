@@ -17,7 +17,8 @@ resource logAnalytics 'Microsoft.OperationalInsights/workspaces@2023-09-01' = {
   name: 'az-${resourcePrefix}-${resourceToken}-logs'
   location: location
   properties: {
-    retentionInDays: 7
+  // PerGB2018 SKU supports workspace-level retention between 30 and 730 days
+  retentionInDays: 30
     sku: {
       name: 'PerGB2018'
     }
