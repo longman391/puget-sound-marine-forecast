@@ -2,7 +2,6 @@
 Tests for API endpoints
 """
 
-import pytest
 from fastapi import status
 
 
@@ -13,7 +12,7 @@ class TestHealthEndpoint:
         """Test that health check endpoint returns 200 or 503"""
         response = test_client.get("/health")
         assert response.status_code in [status.HTTP_200_OK, status.HTTP_503_SERVICE_UNAVAILABLE]
-        
+
         data = response.json()
         assert "status" in data
         assert data["status"] in ["healthy", "unhealthy"]
@@ -26,7 +25,7 @@ class TestRootEndpoint:
         """Test that root endpoint returns API info"""
         response = test_client.get("/")
         assert response.status_code == status.HTTP_200_OK
-        
+
         data = response.json()
         assert "message" in data
         assert "version" in data
@@ -41,7 +40,7 @@ class TestZonesEndpoint:
         """Test that zones endpoint returns list of zones"""
         response = test_client.get("/zones")
         assert response.status_code == status.HTTP_200_OK
-        
+
         data = response.json()
         assert "zones" in data
         assert isinstance(data["zones"], dict)
@@ -75,7 +74,7 @@ class TestCacheEndpoints:
         """Test that cache status endpoint returns metadata"""
         response = test_client.get("/cache/status")
         assert response.status_code == status.HTTP_200_OK
-        
+
         data = response.json()
         assert "cache_metadata" in data
         assert "zones_status" in data

@@ -2,10 +2,11 @@
 Pytest configuration and fixtures for Puget Sound Marine Forecast API tests
 """
 
-import pytest
-import sys
 import os
-from typing import AsyncGenerator
+import sys
+from collections.abc import AsyncGenerator
+
+import pytest
 
 # Add src directory to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
@@ -18,7 +19,7 @@ from httpx import AsyncClient
 def test_client():
     """Create a test client for the FastAPI application"""
     from main import app
-    
+
     return TestClient(app)
 
 
@@ -26,7 +27,7 @@ def test_client():
 async def async_client() -> AsyncGenerator[AsyncClient, None]:
     """Create an async test client for the FastAPI application"""
     from main import app
-    
+
     async with AsyncClient(app=app, base_url="http://test") as client:
         yield client
 
