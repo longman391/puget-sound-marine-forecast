@@ -37,7 +37,7 @@ def sample_forecast_text():
     """Sample NOAA forecast text for testing parser"""
     return """PZZ133-061800-
 Northern Inland Waters Including The San Juan Islands-
-1234 AM PST Mon Jan 6 2026
+1234 AM PST Mon Jan 6 2025
 
 .TONIGHT...N wind 10 kt. Wind waves 1 ft or less.
 .TUE...N wind 10 kt. Wind waves 1 ft or less.

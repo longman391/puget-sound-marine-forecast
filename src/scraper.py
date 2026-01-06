@@ -100,22 +100,22 @@ class ForecastScraper:
 
     def _parse_timestamp(self, timestamp_str: str) -> datetime:
         """Parse timestamp from forecast text"""
+        from dateutil import parser
+
         try:
             # Example: "305 PM PDT Tue Aug 5 2025"
-            # More robust parsing would handle various formats
-            from dateutil import parser
-
             # Clean up the timestamp string
             cleaned = timestamp_str.strip()
 
             # Try to parse with dateutil (handles many formats)
             try:
                 return parser.parse(cleaned)
-            except Exception:  # noqa: E722
+            except (ValueError, TypeError, parser.ParserError):
                 # Fallback to current time if parsing fails
                 return datetime.now()
 
-        except Exception:  # noqa: E722
+        except (ImportError, AttributeError):
+            # Fallback if dateutil import fails
             return datetime.now()
 
     def _parse_expires(self, expires_str: str) -> datetime:
@@ -128,8 +128,6 @@ class ForecastScraper:
                 minute = int(expires_str[4:6])
 
                 # Assume current month/year for simplicity
-                from datetime import datetime
-
                 now = datetime.now()
                 expires = now.replace(day=day, hour=hour, minute=minute, second=0, microsecond=0)
 
@@ -144,7 +142,10 @@ class ForecastScraper:
             else:
                 # Fallback
                 return datetime.now()
-        except Exception:  # noqa: E722
+        except (ValueError, TypeError, OverflowError):
+            # ValueError: invalid day/hour/minute
+            # TypeError: invalid type conversion
+            # OverflowError: date value out of range
             return datetime.now()
 
     def _extract_periods(self, text: str) -> list[ForecastPeriod]:
