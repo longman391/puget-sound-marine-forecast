@@ -96,6 +96,126 @@ All 14 NOAA marine forecast zones including:
 - University of Washington Marine Weather Forecast via NOAA
 - Text files updated regularly by UW meteorology department
 
+##  Development
+
+### Local Development Setup
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/longman391/puget-sound-marine-forecast.git
+   cd puget-sound-marine-forecast
+   ```
+
+2. **Create and activate a virtual environment**
+   ```bash
+   python -m venv .venv
+   
+   # On Windows
+   .venv\Scripts\activate
+   
+   # On macOS/Linux
+   source .venv/bin/activate
+   ```
+
+3. **Install development dependencies**
+   ```bash
+   pip install -r requirements-dev.txt
+   ```
+
+4. **Set up environment variables (optional)**
+   ```bash
+   cp .env.example .env
+   # Edit .env with your preferred settings
+   ```
+
+### Running the Application
+
+```bash
+cd src
+python main.py
+```
+
+The API will be available at http://localhost:8000
+
+### Running Tests
+
+```bash
+# Run all tests
+pytest
+
+# Run with coverage report
+pytest --cov=src --cov-report=html
+
+# Run specific test file
+pytest tests/test_api.py
+
+# Run with verbose output
+pytest -v
+```
+
+### Code Quality
+
+This project uses **Black** for code formatting and **Ruff** for linting.
+
+```bash
+# Format code with Black
+black src/ tests/
+
+# Check formatting without changes
+black --check src/ tests/
+
+# Lint with Ruff
+ruff check src/ tests/
+
+# Lint and auto-fix issues
+ruff check --fix src/ tests/
+```
+
+### Pre-commit Hooks
+
+We use pre-commit hooks to ensure code quality before commits.
+
+```bash
+# Install pre-commit hooks
+pre-commit install
+
+# Run hooks manually on all files
+pre-commit run --all-files
+```
+
+### Code Style Guidelines
+
+- **Line length**: Maximum 100 characters
+- **Python version**: 3.11+
+- **Formatter**: Black
+- **Linter**: Ruff with selected rules (E, F, I, N, W, UP)
+- **Imports**: Sorted and organized
+- **Type hints**: Encouraged but not required
+- **Docstrings**: Use for public APIs and complex functions
+
+### Project Structure
+
+```
+puget-sound-marine-forecast/
+├── src/                    # Source code
+│   ├── main.py            # FastAPI application
+│   ├── scraper.py         # Forecast scraper and parser
+│   └── __init__.py
+├── tests/                 # Test suite
+│   ├── conftest.py        # Pytest fixtures
+│   ├── test_api.py        # API endpoint tests
+│   ├── test_scraper.py    # Scraper tests
+│   └── test_cache.py      # Cache tests
+├── .github/workflows/     # CI/CD workflows
+├── requirements.txt       # All dependencies
+├── requirements-prod.txt  # Production dependencies only
+├── requirements-dev.txt   # Development dependencies
+├── pyproject.toml         # Project configuration
+├── .pre-commit-config.yaml # Pre-commit hooks
+├── .env.example           # Example environment variables
+└── Dockerfile             # Container configuration
+```
+
 ##  Contributing
 
 This is a learning project! Feel free to suggest improvements or contribute.
@@ -103,3 +223,4 @@ This is a learning project! Feel free to suggest improvements or contribute.
 ##  License
 
 MIT License - see [LICENSE](LICENSE) file for details.
+
