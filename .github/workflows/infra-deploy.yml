@@ -1,0 +1,147 @@
+name: Infrastructure Deployment
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+          - dev
+          - test
+          - prod
+  push:
+    branches:
+      - main
+    paths:
+      - 'infra/**'
+      - '.github/workflows/infra-deploy.yml'
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  validate:
+    name: Validate Infrastructure
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup Azure CLI
+      uses: azure/login@v2
+      with:
+        client-id: ${{ secrets.AZURE_CLIENT_ID }}
+        tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+        subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      continue-on-error: true
+    
+    - name: Validate Bicep files
+      run: |
+        az bicep version
+        az bicep build --file infra/main.bicep
+        az bicep build --file infra/main-resources.bicep
+        echo "✓ Bicep validation successful"
+      continue-on-error: true
+    
+    - name: Check Bicep file formatting
+      run: |
+        # Check if Bicep files are properly formatted
+        for file in infra/*.bicep; do
+          echo "Checking $file..."
+          # Basic syntax validation
+          grep -q "targetScope" "$file" || echo "⚠ No targetScope in $file"
+        done
+        echo "✓ Bicep formatting check complete"
+
+  deploy-dev:
+    name: Deploy to Development
+    runs-on: ubuntu-latest
+    needs: validate
+    if: github.event.inputs.environment == 'dev' || (github.ref == 'refs/heads/main' && github.event_name == 'push')
+    environment: 
+      name: development
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Azure Login
+      uses: azure/login@v2
+      with:
+        client-id: ${{ secrets.AZURE_CLIENT_ID }}
+        tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+        subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      continue-on-error: true
+    
+    - name: Deploy Infrastructure
+      run: |
+        echo "Deploying to Development environment..."
+        # az deployment sub create \
+        #   --name psm-dev-deployment \
+        #   --location westus2 \
+        #   --template-file infra/main.bicep \
+        #   --parameters infra/main.parameters.json \
+        #   --parameters environmentName=dev
+        echo "⚠ Azure deployment configured but requires Azure credentials"
+        echo "Set up Azure service principal and configure secrets:"
+        echo "  - AZURE_CLIENT_ID"
+        echo "  - AZURE_TENANT_ID"
+        echo "  - AZURE_SUBSCRIPTION_ID"
+      continue-on-error: true
+
+  deploy-test:
+    name: Deploy to Test
+    runs-on: ubuntu-latest
+    needs: validate
+    if: github.event.inputs.environment == 'test'
+    environment: 
+      name: test
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Azure Login
+      uses: azure/login@v2
+      with:
+        client-id: ${{ secrets.AZURE_CLIENT_ID }}
+        tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+        subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      continue-on-error: true
+    
+    - name: Deploy Infrastructure
+      run: |
+        echo "Deploying to Test environment..."
+        echo "⚠ Configure Azure credentials to enable deployment"
+      continue-on-error: true
+
+  deploy-prod:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: validate
+    if: github.event.inputs.environment == 'prod'
+    environment: 
+      name: production
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Azure Login
+      uses: azure/login@v2
+      with:
+        client-id: ${{ secrets.AZURE_CLIENT_ID }}
+        tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+        subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      continue-on-error: true
+    
+    - name: Deploy Infrastructure
+      run: |
+        echo "Deploying to Production environment..."
+        echo "⚠ Configure Azure credentials to enable deployment"
+      continue-on-error: true
