@@ -249,7 +249,7 @@ On every push/PR to `main`:
 1. Type checking with mypy
 2. Code linting with black and ruff
 3. Security scanning (secrets, vulnerabilities)
-4. Unit tests with 70% coverage requirement
+4. Unit tests with 55% coverage requirement
 5. Upload coverage to Codecov
 
 ### CD Pipeline
