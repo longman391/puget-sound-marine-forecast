@@ -2,5 +2,5 @@
 fastapi==0.115.6
 uvicorn[standard]==0.32.1
 httpx==0.27.2
-python-dateutil==2.9.0
+python-dateutil==2.9.0.post0
 slowapi==0.1.9
