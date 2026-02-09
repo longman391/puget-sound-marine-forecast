@@ -8,10 +8,13 @@
 # To update:
 #   pip-compile requirements.txt --output-file=constraints.txt
 #   or manually update versions after testing
+#
+# Note: Constraints cannot include extras like [standard].
+# The extras are specified in requirements files, not constraints.
 
 # Core API dependencies
 fastapi==0.115.6
-uvicorn[standard]==0.32.1
+uvicorn==0.32.1
 httpx==0.27.2
 python-dateutil==2.9.0
 

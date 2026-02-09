@@ -38,11 +38,19 @@ jobs:
     
     - name: Run security checks - secrets scanning
       run: |
-        pip install gitleaks || echo "Gitleaks not available via pip, skipping"
-        # Alternative: use detect-secrets
+        # Install gitleaks (Go binary)
+        wget -q https://github.com/gitleaks/gitleaks/releases/download/v8.21.2/gitleaks_8.21.2_linux_x64.tar.gz
+        tar -xzf gitleaks_8.21.2_linux_x64.tar.gz
+        chmod +x gitleaks
+        ./gitleaks detect --source . --verbose --no-git || echo "⚠ Gitleaks found potential secrets (review required)"
+        
+        # Install and run detect-secrets
         pip install detect-secrets
-        detect-secrets scan --baseline .secrets.baseline || echo "Creating baseline"
-        detect-secrets scan --exclude-files '.*\.pyc$' --exclude-files '^\.git/' || true
+        if [ ! -f .secrets.baseline ]; then
+          echo "Creating initial secrets baseline..."
+          detect-secrets scan --exclude-files '.*\.pyc$' --exclude-files '^\.git/' > .secrets.baseline
+        fi
+        detect-secrets scan --baseline .secrets.baseline --exclude-files '.*\.pyc$' --exclude-files '^\.git/'
     
     - name: Run security checks - dependency vulnerabilities
       run: |
@@ -51,7 +59,7 @@ jobs:
     
     - name: Run tests with coverage
       run: |
-        pytest --cov=src --cov-report=xml --cov-report=term-missing --cov-fail-under=55
+        pytest --cov=src --cov-report=xml --cov-report=term-missing --cov-fail-under=57
     
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v4

@@ -168,7 +168,7 @@ pytest tests/test_api.py
 pytest -v
 ```
 
-**Test Coverage**: This project enforces a minimum test coverage of 55% (see [pyproject.toml](pyproject.toml)). Current coverage is approximately 58%.
+**Test Coverage**: This project enforces a minimum test coverage of 57% (see [pyproject.toml](pyproject.toml)). Current coverage is approximately 58%.
 
 ### Code Quality
 
@@ -227,7 +227,7 @@ pre-commit run --all-files
 - **Imports**: Sorted and organized
 - **Type hints**: Encouraged but not required
 - **Docstrings**: Use for public APIs and complex functions
-- **Coverage**: Minimum 55% test coverage enforced
+- **Coverage**: Minimum 57% test coverage enforced
 
 ### Project Structure
 
@@ -343,7 +343,7 @@ We welcome contributions! This is a learning project and we encourage developers
 
 For detailed contributing guidelines, including:
 - Development workflow
-- Testing requirements (55% minimum coverage)
+- Testing requirements (57% minimum coverage)
 - Code quality standards
 - Dependency management
 - Pull request process

@@ -126,7 +126,7 @@ pytest -v
 
 ### Test Coverage Requirements
 
-- **Minimum coverage**: 55% overall
+- **Minimum coverage**: 57% overall
 - **New code**: Aim for 80%+ coverage on new features
 - **Critical paths**: 90%+ coverage on security and data parsing logic
 
@@ -284,7 +284,7 @@ pip-audit
 
 3. **Test coverage**
    - Ensure new code has tests
-   - Verify coverage meets minimum (55%)
+   - Verify coverage meets minimum (57%)
    - Aim for 80%+ on new features
 
 ### Submitting a Pull Request
