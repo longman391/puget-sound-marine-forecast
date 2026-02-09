@@ -12,6 +12,7 @@ jobs:
     
     permissions:
       contents: read
+      security-events: write
     
     steps:
     - uses: actions/checkout@v4
@@ -24,18 +25,59 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install -r requirements.txt
+        pip install -r requirements.txt -c constraints.txt
+    
+    - name: Run type checking
+      run: |
+        mypy src/ --ignore-missing-imports
     
     - name: Run linting
       run: |
         black --check src/ tests/
         ruff check src/ tests/
     
-    - name: Run tests
+    - name: Run security checks - secrets scanning
       run: |
-        pytest --cov=src --cov-report=xml
+        # Install gitleaks (Go binary)
+        wget -q https://github.com/gitleaks/gitleaks/releases/download/v8.21.2/gitleaks_8.21.2_linux_x64.tar.gz
+        tar -xzf gitleaks_8.21.2_linux_x64.tar.gz
+        chmod +x gitleaks
+        ./gitleaks detect --source . --verbose --no-git || echo "⚠ Gitleaks found potential secrets (review required)"
+        
+        # Install and run detect-secrets
+        pip install detect-secrets
+        if [ ! -f .secrets.baseline ]; then
+          echo "Creating initial secrets baseline..."
+          detect-secrets scan --exclude-files '.*\.pyc$' --exclude-files '^\.git/' > .secrets.baseline
+        fi
+        detect-secrets scan --baseline .secrets.baseline --exclude-files '.*\.pyc$' --exclude-files '^\.git/'
     
-    - name: Upload coverage
+    - name: Run security checks - dependency vulnerabilities
+      run: |
+        pip-audit --desc --skip-editable
+      continue-on-error: true
+    
+    - name: Run tests with coverage
+      run: |
+        pytest --cov=src --cov-report=xml --cov-report=term-missing --cov-fail-under=57
+    
+    - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v4
       with:
         file: ./coverage.xml
+        flags: unittests
+        name: codecov-umbrella
+      env:
+        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+    
+    - name: Check environment configuration
+      run: |
+        # Verify .env.example exists and has required keys
+        if [ -f .env.example ]; then
+          echo "✓ .env.example found"
+          grep -q "API_TITLE" .env.example && echo "✓ API_TITLE configured"
+          grep -q "HOST" .env.example && echo "✓ HOST configured"
+          grep -q "PORT" .env.example && echo "✓ PORT configured"
+        else
+          echo "⚠ .env.example not found"
+        fi

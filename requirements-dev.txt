@@ -9,6 +9,10 @@ pytest-cov==6.0.0
 # Code quality
 black==24.10.0
 ruff==0.8.4
+mypy==1.13.0
+
+# Security
+pip-audit==2.7.3
 
 # Pre-commit hooks
 pre-commit==4.0.1
