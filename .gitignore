@@ -208,3 +208,8 @@ __marimo__/
 
 # Azure Developer CLI
 .azure/
+
+# Node / Frontend
+node_modules/
+frontend/dist/
+frontend/.vite/
