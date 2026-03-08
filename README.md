@@ -1,105 +1,99 @@
-﻿# Puget Sound Marine Forecast API
+# Puget Sound Marine Forecast
 
-A Python API that scrapes and serves marine forecast data for Puget Sound from the University of Washington and NOAA. Intended to be easily consumed as a RESTful call from Home Assistant, Dakboard, etc.
+A containerized service that fetches and serves marine forecast data for Puget Sound from NOAA. Provides a REST API, MCP server for AI agents, and a web dashboard.
 
-##  Quick Start 🚀
+## Quick Start
 
-### Prerequisites
-- Python 3.11+
-- Git
-
-### Installation & Running
+### Docker (recommended)
 ```bash
-# Clone the repository
-git clone https://github.com/longman391/puget-sound-marine-forecast.git
-cd puget-sound-marine-forecast
+docker compose up --build
+```
 
-# Set up Python environment (auto-configured in VS Code)
-# Or manually: python -m venv .venv && .venv\Scripts\activate
+The API will be available at `http://localhost:8000/api/v1/`.
+
+### Local Development
+```bash
+# Set up Python environment
+python -m venv .venv && source .venv/bin/activate
 
 # Install dependencies
-pip install -r requirements.txt
+pip install -e ".[dev]"
 
 # Start the API server
-cd src
-python main.py
+cd src && python -m uvicorn app.main:app --reload
 ```
 
 ### Usage
-- **API Documentation:** http://localhost:8000/docs
-- **All Zones:** http://localhost:8000/zones  
-- **San Juan Islands:** http://localhost:8000/forecast/pzz133
-- **Puget Sound:** http://localhost:8000/forecast/pzz135
-- **All Forecasts:** http://localhost:8000/forecast/
+- **API Docs:** http://localhost:8000/docs
+- **All Zones:** http://localhost:8000/api/v1/zones
+- **Puget Sound Forecast:** http://localhost:8000/api/v1/forecast/PZZ135
+- **All Forecasts:** http://localhost:8000/api/v1/forecast
+- **Synopsis:** http://localhost:8000/api/v1/synopsis
+- **Health Check:** http://localhost:8000/api/v1/health
 
-##  About
+## About
 
-The University of Washington does an excellent job of providing accurate and timely forecasts for Washington State marine areas. Unfortunately, those forecasts are provided only in unstructured formats from the UW and NOAA, making them difficult to use in other contexts. 
+The University of Washington does an excellent job of providing accurate and timely marine forecasts for Washington State waters. Unfortunately, those forecasts are provided only as unstructured text, making them difficult to consume programmatically.
 
-This project attempts to resolve this issue by ingesting the raw forecast texts, parsing them, and providing a structured JSON API for access, making it easy for applications to consume the structured forecast data.
+This service fetches the raw forecast text per-zone, extracts advisory/warning status, and serves it via a clean JSON API — making it easy for Home Assistant, Dakboard, AI agents (via MCP), and other tools to access marine conditions.
 
-##  Features (Completed ✅)
+## Features
 
-- [x] Scrape UW marine forecast text files ✅
-- [x] Parse forecast data into structured format ✅  
-- [x] Provide RESTful JSON API endpoints ✅
-- [x] Automatic forecast updates (120-minute background cache - optimized for personal use) ✅
-- [ ] Deploy as Azure Container App (or similar serverless solution)
-- [ ] Historical data storage
+- **REST API** with per-zone and all-zone forecast endpoints
+- **Advisory detection** — boolean flags for active and upcoming warnings/advisories/watches
+- **MCP server** for AI agent integration (SSE transport, togglable)
+- **Hourly caching** with background refresh (configurable interval)
+- **API key auth** compatible with Home Assistant, Dakboard, and MCP clients
+- **Docker-first** — runs on Unraid, any Docker host, or cloud
+- **Web dashboard** for checking forecasts and monitoring server health
 
-##  Tech Stack (Implemented)
+## Supported Zones
 
-**Backend:** Python 3.11+ with FastAPI ✅  
-**Dependencies:** httpx, python-dateutil, uvicorn ✅  
-**Security:** Rate limiting, input validation, CORS protection ✅  
-**Caching:** In-memory cache with 120-minute background updates (personal use optimized) ✅  
-**Performance:** Lightning-fast cached responses (<100ms) ⚡  
-**Deployment:** Ready for Azure Functions, Azure Container Apps, or Azure App Service  
-**Data Format:** Real-time JSON from NOAA text files ✅  
-**Parsing:** Advanced regex with estimated 100% wind data accuracy ✅
+All 14 NOAA marine forecast zones for Washington:
 
-##  API Endpoints ✅
+| Zone | Area |
+|------|------|
+| PZZ100 | Synopsis |
+| PZZ110 | Grays Harbor Bar |
+| PZZ130-132 | Strait of Juan de Fuca (West/Central/East) |
+| **PZZ133** | **Northern Inland Waters / San Juan Islands** |
+| PZZ134 | Admiralty Inlet |
+| **PZZ135** | **Puget Sound and Hood Canal** |
+| PZZ150-156 | Coastal Waters (0-10 nm) |
+| PZZ170-176 | Coastal Waters (10-60 nm) |
 
-- `GET /` - API status and cache information
-- `GET /zones` - List all 14 available forecast zones  
-- `GET /forecast/{zone}` - Get parsed forecast for specific zone (cached)
-- `GET /forecast/` - All forecasts for all 14 zones (cached)
-- `GET /cache/status` - Detailed cache health and statistics  
-- `POST /cache/refresh` - Manually trigger cache refresh
+## Configuration
 
-##  Supported Zones ✅
+All settings via environment variables (see `.env.example`):
 
-All 14 NOAA marine forecast zones including:
-- **PZZ133**: Northern Inland Waters Including The San Juan Islands
-- **PZZ135**: Puget Sound and Hood Canal
-- PZZ100, PZZ110, PZZ130-132, PZZ134, PZZ150, PZZ153, PZZ156, PZZ170, PZZ173, PZZ176
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `API_KEY` | _(empty)_ | API key; if empty, auth is disabled |
+| `CACHE_INTERVAL_MINUTES` | `60` | Forecast refresh interval |
+| `ALLOWED_ORIGINS` | `*` | CORS origins (comma-separated) |
+| `MCP_ENABLED` | `true` | Enable MCP server endpoint |
+| `LOG_LEVEL` | `INFO` | Logging level |
+| `TZ` | `America/Los_Angeles` | Timezone |
 
-##  Project Status
+## Development
 
-🎉 **API Complete & Working**
+```bash
+# Run tests
+PYTHONPATH=src pytest tests/ -v
 
-##  Security Features ✅
+# Lint & format
+ruff check src/ tests/
+black src/ tests/
 
-- **Rate Limiting**: Optimized for personal use
-  - General endpoints: 100-500 requests/hour
-  - Cache refresh: 10 requests/hour
-  - Cache status: 60 requests/hour
-- **Input Validation**: Strict zone format validation with regex patterns
-- **Error Handling**: Secure error responses that don't leak internal information
-- **CORS Protection**: Configurable cross-origin request policies
-- **Host Header Validation**: Protection against host header attacks
-- **Request Timeouts**: Configured timeouts for external API calls
-- **Comprehensive Logging**: Security event logging for monitoring
+# Type check
+mypy src/ --ignore-missing-imports
+```
 
-##  Data Source
+## Data Source
 
-- University of Washington Marine Weather Forecast via NOAA
-- Text files updated regularly by UW meteorology department
+- [NOAA NWS Seattle](https://www.weather.gov/sew/) via per-zone text files
+- [UW Atmospheric Sciences](https://a.atmos.washington.edu/data/marine_report.html) for regional synopsis
 
-##  Contributing
+## License
 
-This is a learning project! Feel free to suggest improvements or contribute.
-
-##  License
-
-MIT License - see [LICENSE](LICENSE) file for details.
+MIT License — see [LICENSE](LICENSE) file.

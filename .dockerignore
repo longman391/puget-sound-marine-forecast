@@ -6,23 +6,12 @@
 __pycache__
 *.pyc
 *.pyo
-*.pyd
-.Python
-env
-pip-log.txt
-pip-delete-this-directory.txt
-.tox
-.coverage
-.coverage.*
-.cache
-nosetests.xml
-coverage.xml
-*.cover
-*.log
-.git
 .mypy_cache
 .pytest_cache
-.hypothesis
+.ruff_cache
+htmlcov/
+.coverage
+.coverage.*
 
 # Virtual environments
 .env
@@ -34,34 +23,23 @@ venv/
 .vscode/
 .idea/
 *.swp
-*.swo
 *~
 
 # OS
 .DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
 
-# Azure
-.azure/
-
-# Testing
-.pytest_cache/
+# Testing (not needed in production image)
 tests/
-*_test.py
-test_*.py
 
-# Requirements (we use requirements-prod.txt in Docker)
-requirements.txt
+# Node (frontend is built in the Docker build stage)
+frontend/node_modules/
 
-# Infrastructure
+# Infrastructure & docs
 infra/
 azure.yaml
-
-# Documentation
 README.md
 LICENSE
+CONTRIBUTING.md
+DEPLOYMENT.md
+SECURITY.md
+docker-compose.yml
