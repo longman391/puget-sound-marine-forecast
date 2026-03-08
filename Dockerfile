@@ -1,10 +1,10 @@
-# --- Stage 1: Frontend build (placeholder for Phase 4) ---
-# FROM node:22-slim AS frontend-build
-# WORKDIR /frontend
-# COPY frontend/package*.json ./
-# RUN npm ci
-# COPY frontend/ ./
-# RUN npm run build
+# --- Stage 1: Frontend build ---
+FROM node:22-slim AS frontend-build
+WORKDIR /frontend
+COPY frontend/package*.json ./
+RUN npm ci --quiet
+COPY frontend/ ./
+RUN npm run build
 
 # --- Stage 2: Python runtime ---
 FROM python:3.12-slim
@@ -22,8 +22,8 @@ RUN pip install --no-cache-dir . && pip cache purge
 # Copy source code
 COPY src/ ./src/
 
-# Placeholder: copy built frontend
-# COPY --from=frontend-build /frontend/dist ./frontend/dist
+# Copy built frontend
+COPY --from=frontend-build /frontend/dist ./frontend/dist
 
 # Create non-root user
 RUN adduser --disabled-password --gecos '' --shell /bin/bash appuser \
