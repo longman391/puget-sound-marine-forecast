@@ -12,6 +12,14 @@ function timeAgo(iso: string | null): string {
   return `${Math.floor(mins / 60)}h ${mins % 60}m ago`;
 }
 
+function absTime(iso: string | null): string {
+  if (!iso) return "";
+  return new Date(iso).toLocaleString("en-US", {
+    timeZone: "America/Los_Angeles",
+    timeZoneName: "short",
+  });
+}
+
 export default function Dashboard() {
   const [data, setData] = useState<AllForecastsResponse | null>(null);
   const [status, setStatus] = useState<CacheStatus | null>(null);
@@ -53,70 +61,70 @@ export default function Dashboard() {
     <>
       <div className="page-header">
         <h2>Marine Forecast Dashboard</h2>
-        <p>Puget Sound & Washington Coastal Waters</p>
+        <p>Puget Sound &amp; Washington Coastal Waters</p>
       </div>
 
       <div className="status-bar">
-        <span>
-          🟢 {data.successful}/{data.total_zones} zones
+        <span aria-label="Zones available">
+          <span aria-hidden="true">🟢</span> {data.successful}/{data.total_zones} zones
         </span>
-        <span>🕐 Updated {timeAgo(data.cache_last_updated)}</span>
-        {status && <span>⏱ {status.total_updates} refreshes</span>}
-        <button
-          onClick={handleRefresh}
-          disabled={refreshing}
-          style={{ padding: "0.25rem 0.75rem", fontSize: "0.8rem" }}
-        >
+        <span aria-label={`Last updated ${absTime(data.cache_last_updated)}`}>
+          <span aria-hidden="true">🕐</span> Updated {timeAgo(data.cache_last_updated)}
+        </span>
+        {status && (
+          <span aria-label={`${status.total_updates} total refreshes`}>
+            <span aria-hidden="true">⏱</span> {status.total_updates} refreshes
+          </span>
+        )}
+        <button onClick={handleRefresh} disabled={refreshing}>
           {refreshing ? "Refreshing…" : "↻ Refresh"}
         </button>
       </div>
 
       <div className="zone-grid">
-        {data.forecasts.map((f) => (
-          <Link
-            to={`/zone/${f.zone_id}`}
-            key={f.zone_id}
-            style={{ textDecoration: "none", color: "inherit" }}
-          >
-            <div className="card">
-              <div className="card-header">
-                <span className="card-title">{f.zone_name}</span>
-                <span style={{ color: "var(--text-muted)", fontSize: "0.8rem" }}>
-                  {f.zone_id}
-                </span>
-              </div>
-              <div style={{ display: "flex", gap: "0.5rem", marginBottom: "0.75rem" }}>
-                {f.has_active_advisory && (
-                  <span className="badge badge-danger">⚠ Active Advisory</span>
-                )}
-                {f.has_upcoming_advisory && (
-                  <span className="badge badge-warning">🔜 Upcoming</span>
-                )}
-                {!f.has_active_advisory && !f.has_upcoming_advisory && (
-                  <span className="badge badge-ok">✓ Clear</span>
-                )}
-              </div>
-              {f.advisory_text && (
-                <div
-                  style={{
-                    fontSize: "0.8rem",
-                    color: "var(--warning)",
-                    marginBottom: "0.5rem",
-                  }}
-                >
-                  {f.advisory_text}
+        {data.forecasts.map((f) => {
+          const cardClass = f.has_active_advisory
+            ? "card card-danger"
+            : f.has_upcoming_advisory
+            ? "card card-advisory"
+            : "card";
+
+          return (
+            <Link to={`/zone/${f.zone_id}`} key={f.zone_id} className="card-link">
+              <div className={cardClass}>
+                <div className="card-header">
+                  <span className="card-title">{f.zone_name}</span>
+                  <span className="setting-value">{f.zone_id}</span>
                 </div>
-              )}
-              <div
-                className="forecast-text"
-                style={{ maxHeight: "120px", fontSize: "0.78rem" }}
-              >
-                {f.forecast_text.slice(0, 300)}
-                {f.forecast_text.length > 300 ? "…" : ""}
+                <div className="badge-row">
+                  {f.has_active_advisory && (
+                    <span className="badge badge-danger" role="status" aria-label="Active weather advisory">
+                      <span aria-hidden="true">⚠</span> Active Advisory
+                    </span>
+                  )}
+                  {f.has_upcoming_advisory && (
+                    <span className="badge badge-warning" role="status" aria-label="Upcoming weather advisory">
+                      <span aria-hidden="true">🔜</span> Upcoming
+                    </span>
+                  )}
+                  {!f.has_active_advisory && !f.has_upcoming_advisory && (
+                    <span className="badge badge-ok" role="status" aria-label="No advisories">
+                      <span aria-hidden="true">✓</span> Clear
+                    </span>
+                  )}
+                </div>
+                {f.advisory_text && (
+                  <div className="setting-value" style={{ color: "var(--warning)", marginBottom: "0.75rem" }}>
+                    {f.advisory_text}
+                  </div>
+                )}
+                <div className="forecast-text forecast-preview">
+                  {f.forecast_text}
+                </div>
               </div>
-            </div>
-          </Link>
-        ))}
+            </Link>
+          );
+        })}
       </div>
     </>
   );

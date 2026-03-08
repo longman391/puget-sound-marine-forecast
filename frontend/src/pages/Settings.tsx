@@ -25,7 +25,7 @@ export default function Settings() {
         <h2>Server Settings & Status</h2>
       </div>
 
-      <div className="card" style={{ marginTop: "1.5rem" }}>
+      <div className="card section-gap">
         <div className="card-title" style={{ marginBottom: "1rem" }}>
           Cache Status
         </div>
@@ -81,7 +81,7 @@ export default function Settings() {
         </div>
       </div>
 
-      <div className="card" style={{ marginTop: "1rem" }}>
+      <div className="card section-gap">
         <div className="card-title" style={{ marginBottom: "1rem" }}>
           Configuration
         </div>
@@ -121,38 +121,29 @@ export default function Settings() {
         </div>
       </div>
 
-      <div className="card" style={{ marginTop: "1rem", marginBottom: "2rem" }}>
-        <div className="card-title" style={{ marginBottom: "1rem" }}>
+      <div className="card section-gap" style={{ marginBottom: "2rem" }}>
+        <label htmlFor="api-key-input" className="card-title" style={{ display: "block", marginBottom: "0.5rem" }}>
           API Key
-        </div>
-        <p style={{ color: "var(--text-muted)", fontSize: "0.85rem", marginBottom: "0.75rem" }}>
+        </label>
+        <p id="api-key-help" style={{ color: "var(--text-muted)", fontSize: "0.85rem", marginBottom: "0.75rem" }}>
           If the server has auth enabled, enter your API key here. It will be
           stored in your browser's localStorage.
         </p>
-        <div style={{ display: "flex", gap: "0.5rem" }}>
-          <input
-            type="password"
-            placeholder="Enter API key…"
-            defaultValue={localStorage.getItem("api_key") || ""}
-            onChange={(e) => {
-              if (e.target.value) {
-                localStorage.setItem("api_key", e.target.value);
-              } else {
-                localStorage.removeItem("api_key");
-              }
-            }}
-            style={{
-              flex: 1,
-              background: "var(--bg)",
-              border: "1px solid var(--border)",
-              borderRadius: "var(--radius)",
-              padding: "0.5rem 0.75rem",
-              color: "var(--text)",
-              fontFamily: "monospace",
-              fontSize: "0.85rem",
-            }}
-          />
-        </div>
+        <input
+          id="api-key-input"
+          className="input"
+          type="password"
+          placeholder="Enter API key…"
+          aria-describedby="api-key-help"
+          defaultValue={localStorage.getItem("api_key") || ""}
+          onChange={(e) => {
+            if (e.target.value) {
+              localStorage.setItem("api_key", e.target.value);
+            } else {
+              localStorage.removeItem("api_key");
+            }
+          }}
+        />
       </div>
     </>
   );
