@@ -9,7 +9,7 @@ export default function App() {
       <nav>
         <div className="container">
           <h1>
-            <span>⚓</span> Marine Forecast
+            <span aria-hidden="true">⚓</span> Marine Forecast
           </h1>
           <div className="nav-links">
             <NavLink to="/" end>
