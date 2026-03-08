@@ -2,10 +2,12 @@
 
 import logging
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 
 from app.config import settings
 from app.routes import admin, forecast, health
@@ -17,6 +19,8 @@ logging.basicConfig(
     datefmt="%Y-%m-%d %H:%M:%S",
 )
 logger = logging.getLogger(__name__)
+
+FRONTEND_DIR = Path(__file__).resolve().parent.parent.parent / "frontend" / "dist"
 
 
 @asynccontextmanager
@@ -59,6 +63,28 @@ def create_app() -> FastAPI:
     app.include_router(health.router)
     app.include_router(forecast.router)
     app.include_router(admin.router)
+
+    # Mount MCP server if enabled
+    if settings.mcp_enabled:
+        from app.mcp.server import mcp_server
+
+        mcp_app = mcp_server.streamable_http_app()
+        app.mount("/mcp", mcp_app)
+        logger.info("MCP server mounted at /mcp")
+
+    # Serve React frontend (if built)
+    if FRONTEND_DIR.is_dir():
+        app.mount("/assets", StaticFiles(directory=FRONTEND_DIR / "assets"), name="static")
+
+        @app.get("/{path:path}")
+        async def serve_spa(path: str):
+            """Serve the React SPA — fallback to index.html for client-side routing."""
+            file = FRONTEND_DIR / path
+            if file.is_file():
+                return FileResponse(file)
+            return FileResponse(FRONTEND_DIR / "index.html")
+
+        logger.info("Frontend served from %s", FRONTEND_DIR)
 
     return app
 

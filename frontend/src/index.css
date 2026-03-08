@@ -1,0 +1,175 @@
+:root {
+  --bg: #0f172a;
+  --surface: #1e293b;
+  --surface-hover: #334155;
+  --border: #334155;
+  --text: #e2e8f0;
+  --text-muted: #94a3b8;
+  --accent: #38bdf8;
+  --accent-hover: #7dd3fc;
+  --success: #4ade80;
+  --warning: #fbbf24;
+  --danger: #f87171;
+  --radius: 8px;
+  --font: "Inter", system-ui, -apple-system, sans-serif;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+a { color: var(--accent); text-decoration: none; }
+a:hover { color: var(--accent-hover); }
+
+.container { max-width: 1200px; margin: 0 auto; padding: 0 1.5rem; }
+
+/* Nav */
+nav {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 1rem 0;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+nav .container { display: flex; align-items: center; gap: 2rem; }
+nav h1 { font-size: 1.1rem; font-weight: 600; white-space: nowrap; }
+nav h1 span { color: var(--accent); }
+nav .nav-links { display: flex; gap: 1.5rem; }
+nav .nav-links a {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  font-weight: 500;
+  padding: 0.25rem 0;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s;
+}
+nav .nav-links a:hover, nav .nav-links a.active {
+  color: var(--text);
+  border-bottom-color: var(--accent);
+}
+
+/* Cards */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  transition: border-color 0.15s;
+}
+.card:hover { border-color: var(--accent); }
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+.card-title { font-size: 1rem; font-weight: 600; }
+
+/* Badges */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.badge-ok { background: rgba(74, 222, 128, 0.15); color: var(--success); }
+.badge-warning { background: rgba(251, 191, 36, 0.15); color: var(--warning); }
+.badge-danger { background: rgba(248, 113, 113, 0.15); color: var(--danger); }
+
+/* Grid */
+.zone-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+/* Forecast text */
+.forecast-text {
+  font-family: "JetBrains Mono", "Fira Code", monospace;
+  font-size: 0.85rem;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  color: var(--text-muted);
+  background: var(--bg);
+  padding: 1rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  max-height: 500px;
+  overflow-y: auto;
+}
+
+/* Buttons */
+button, .btn {
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+button:hover, .btn:hover { background: var(--surface-hover); }
+.btn-primary { background: var(--accent); color: var(--bg); border-color: var(--accent); }
+.btn-primary:hover { background: var(--accent-hover); }
+
+/* Page header */
+.page-header { padding: 2rem 0 1rem; }
+.page-header h2 { font-size: 1.5rem; font-weight: 700; }
+.page-header p { color: var(--text-muted); margin-top: 0.25rem; }
+
+/* Status bar */
+.status-bar {
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  padding: 1rem 0;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+.status-bar span { display: flex; align-items: center; gap: 0.4rem; }
+
+/* Loading / Error */
+.loading, .error-msg { text-align: center; padding: 3rem; color: var(--text-muted); }
+.error-msg { color: var(--danger); }
+
+/* Detail page */
+.detail-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  margin-bottom: 1rem;
+}
+.detail-back:hover { color: var(--text); }
+
+/* Settings */
+.settings-grid { display: grid; gap: 1rem; margin-top: 1.5rem; }
+.setting-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--border);
+}
+.setting-label { font-weight: 500; }
+.setting-value {
+  color: var(--text-muted);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.85rem;
+}

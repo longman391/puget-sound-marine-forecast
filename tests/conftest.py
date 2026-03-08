@@ -81,7 +81,7 @@ SAMPLE_SYNOPSIS_HTML = (
     "WATERS...A front will cross the waters on Sunday, and move inland\n"
     "through early Monday. A stronger front then arrives around\n"
     "Wednesday, with a return of stronger southerly winds.\n"
-    '</blockquote><p><i>$$\n'
+    "</blockquote><p><i>$$\n"
 )
 
 
