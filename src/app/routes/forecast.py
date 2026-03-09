@@ -98,4 +98,4 @@ async def get_synopsis() -> SynopsisResponse:
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Synopsis not yet available. Cache is loading.",
         )
-    return SynopsisResponse(**synopsis)
+    return synopsis

@@ -5,7 +5,7 @@ import logging
 from datetime import datetime, timedelta
 
 from app.config import settings
-from app.models import ZONES, ZoneForecast
+from app.models import ZONES, SynopsisResponse, ZoneForecast
 from app.services.fetcher import fetch_synopsis_html, fetch_zone_text
 from app.services.parser import parse_synopsis, parse_zone_forecast
 
@@ -22,7 +22,7 @@ class ForecastCache:
 
     def __init__(self) -> None:
         self._forecasts: dict[str, ZoneForecast] = {}
-        self._synopsis: dict | None = None
+        self._synopsis: SynopsisResponse | None = None
         self._errors: dict[str, str] = {}
         self._last_updated: datetime | None = None
         self._next_update: datetime | None = None
@@ -38,7 +38,7 @@ class ForecastCache:
     def get_all_forecasts(self) -> list[ZoneForecast]:
         return list(self._forecasts.values())
 
-    def get_synopsis(self) -> dict | None:
+    def get_synopsis(self) -> SynopsisResponse | None:
         return self._synopsis
 
     def get_zone_error(self, zone_id: str) -> str | None:

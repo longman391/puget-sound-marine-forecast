@@ -9,9 +9,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
+from app import __version__
 from app.config import settings
 from app.routes import admin, forecast, health
 from app.services.cache import cache
+from app.services.fetcher import close_client
 
 logging.basicConfig(
     level=getattr(logging, settings.log_level.upper(), logging.INFO),
@@ -26,18 +28,19 @@ FRONTEND_DIR = Path(__file__).resolve().parent.parent.parent / "frontend" / "dis
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Startup/shutdown lifecycle manager."""
-    logger.info("Starting Puget Sound Marine Forecast API v2.0.0")
+    logger.info("Starting Puget Sound Marine Forecast API v%s", __version__)
     await cache.start_background_refresh()
     yield
     logger.info("Shutting down...")
     await cache.stop_background_refresh()
+    await close_client()
 
 
 def create_app() -> FastAPI:
     app = FastAPI(
         title="Puget Sound Marine Forecast API",
         description="Marine forecast service for Puget Sound — REST API, MCP server, and web UI",
-        version="2.0.0",
+        version=__version__,
         lifespan=lifespan,
     )
 
@@ -46,7 +49,7 @@ def create_app() -> FastAPI:
         CORSMiddleware,
         allow_origins=settings.cors_origins,
         allow_credentials=True,
-        allow_methods=["GET", "POST", "PUT", "OPTIONS"],
+        allow_methods=["GET", "POST", "OPTIONS"],
         allow_headers=["*"],
     )
 

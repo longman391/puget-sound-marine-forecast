@@ -1,8 +1,12 @@
 """Pydantic response models for the forecast API."""
 
+from __future__ import annotations
+
 from datetime import datetime
 
 from pydantic import BaseModel, Field
+
+from app import __version__
 
 # --- Zone registry ---
 
@@ -93,4 +97,16 @@ class HealthResponse(BaseModel):
 
     status: str
     timestamp: datetime
-    version: str = "2.0.0"
+    version: str = __version__
+
+
+class ServerSettingsResponse(BaseModel):
+    """Non-sensitive server settings."""
+
+    cache_interval_minutes: int
+    auth_enabled: bool
+    mcp_enabled: bool
+    allowed_origins: list[str]
+    log_level: str
+    noaa_base_url: str
+    uw_synopsis_url: str

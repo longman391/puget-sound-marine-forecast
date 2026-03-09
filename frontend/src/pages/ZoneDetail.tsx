@@ -2,14 +2,8 @@ import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { api } from "../api";
 import type { ZoneForecast } from "../api";
-
-function fmtTime(iso: string | null): string {
-  if (!iso) return "—";
-  return new Date(iso).toLocaleString("en-US", {
-    timeZone: "America/Los_Angeles",
-    timeZoneName: "short",
-  });
-}
+import { AdvisoryBadges } from "../components/AdvisoryBadges";
+import { fmtTime } from "../utils/time";
 
 export default function ZoneDetail() {
   const { zoneId } = useParams<{ zoneId: string }>();
@@ -40,23 +34,7 @@ export default function ZoneDetail() {
         <p>{forecast.zone_id}</p>
       </div>
 
-      <div className="badge-row">
-        {forecast.has_active_advisory && (
-          <span className="badge badge-danger" role="status" aria-label="Active weather advisory">
-            <span aria-hidden="true">⚠</span> Active Advisory
-          </span>
-        )}
-        {forecast.has_upcoming_advisory && (
-          <span className="badge badge-warning" role="status" aria-label="Upcoming weather advisory">
-            <span aria-hidden="true">🔜</span> Upcoming Advisory
-          </span>
-        )}
-        {!forecast.has_active_advisory && !forecast.has_upcoming_advisory && (
-          <span className="badge badge-ok" role="status" aria-label="No advisories">
-            <span aria-hidden="true">✓</span> No Advisories
-          </span>
-        )}
-      </div>
+      <AdvisoryBadges forecast={forecast} />
 
       {forecast.advisory_text && (
         <div className="card card-danger section-gap">

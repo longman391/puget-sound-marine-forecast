@@ -5,7 +5,7 @@ from unittest.mock import patch
 
 import pytest
 
-from app.models import ZoneForecast
+from app.models import SynopsisResponse, ZoneForecast
 from app.services.cache import cache
 
 
@@ -112,11 +112,11 @@ class TestAllForecastsEndpoint:
 
 class TestSynopsisEndpoint:
     def test_get_synopsis(self, client):
-        cache._synopsis = {
-            "synopsis_text": "A front will cross the waters...",
-            "issued": datetime(2026, 3, 8, 10, 10),
-            "fetched_at": datetime.now(),
-        }
+        cache._synopsis = SynopsisResponse(
+            synopsis_text="A front will cross the waters...",
+            issued=datetime(2026, 3, 8, 10, 10),
+            fetched_at=datetime.now(),
+        )
         resp = client.get("/api/v1/synopsis")
         assert resp.status_code == 200
         assert "front" in resp.json()["synopsis_text"]

@@ -2,7 +2,6 @@
 
 import sys
 from pathlib import Path
-from unittest.mock import AsyncMock, patch
 
 import pytest
 from fastapi.testclient import TestClient
@@ -83,17 +82,6 @@ SAMPLE_SYNOPSIS_HTML = (
     "Wednesday, with a return of stronger southerly winds.\n"
     "</blockquote><p><i>$$\n"
 )
-
-
-@pytest.fixture
-def mock_cache():
-    """Patch the cache with pre-loaded data to avoid network calls during tests."""
-    with (
-        patch("app.services.cache.cache") as mock_cache_obj,
-        patch("app.services.fetcher.fetch_zone_text", new_callable=AsyncMock),
-        patch("app.services.fetcher.fetch_synopsis_html", new_callable=AsyncMock),
-    ):
-        yield mock_cache_obj
 
 
 @pytest.fixture

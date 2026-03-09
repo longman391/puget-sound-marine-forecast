@@ -26,9 +26,6 @@ class Settings(BaseSettings):
     # MCP
     mcp_enabled: bool = True
 
-    # Timezone
-    tz: str = "America/Los_Angeles"
-
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8", "extra": "ignore"}
 
     @property

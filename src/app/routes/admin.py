@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends
 
 from app.auth import require_api_key
 from app.config import settings
+from app.models import ServerSettingsResponse
 from app.services.cache import cache
 
 router = APIRouter(
@@ -25,15 +26,15 @@ async def refresh_cache() -> dict:
     }
 
 
-@router.get("/settings")
-async def get_settings() -> dict:
+@router.get("/settings", response_model=ServerSettingsResponse)
+async def get_settings() -> ServerSettingsResponse:
     """Get current server settings (non-sensitive)."""
-    return {
-        "cache_interval_minutes": settings.cache_interval_minutes,
-        "auth_enabled": settings.auth_enabled,
-        "mcp_enabled": settings.mcp_enabled,
-        "allowed_origins": settings.cors_origins,
-        "log_level": settings.log_level,
-        "noaa_base_url": settings.noaa_base_url,
-        "uw_synopsis_url": settings.uw_synopsis_url,
-    }
+    return ServerSettingsResponse(
+        cache_interval_minutes=settings.cache_interval_minutes,
+        auth_enabled=settings.auth_enabled,
+        mcp_enabled=settings.mcp_enabled,
+        allowed_origins=settings.cors_origins,
+        log_level=settings.log_level,
+        noaa_base_url=settings.noaa_base_url,
+        uw_synopsis_url=settings.uw_synopsis_url,
+    )

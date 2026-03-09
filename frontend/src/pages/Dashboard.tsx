@@ -2,23 +2,8 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../api";
 import type { AllForecastsResponse, CacheStatus } from "../api";
-
-function timeAgo(iso: string | null): string {
-  if (!iso) return "—";
-  const diff = Date.now() - new Date(iso).getTime();
-  const mins = Math.floor(diff / 60000);
-  if (mins < 1) return "just now";
-  if (mins < 60) return `${mins}m ago`;
-  return `${Math.floor(mins / 60)}h ${mins % 60}m ago`;
-}
-
-function absTime(iso: string | null): string {
-  if (!iso) return "";
-  return new Date(iso).toLocaleString("en-US", {
-    timeZone: "America/Los_Angeles",
-    timeZoneName: "short",
-  });
-}
+import { AdvisoryBadges } from "../components/AdvisoryBadges";
+import { fmtTime, timeAgo } from "../utils/time";
 
 export default function Dashboard() {
   const [data, setData] = useState<AllForecastsResponse | null>(null);
@@ -68,7 +53,7 @@ export default function Dashboard() {
         <span aria-label="Zones available">
           <span aria-hidden="true">🟢</span> {data.successful}/{data.total_zones} zones
         </span>
-        <span aria-label={`Last updated ${absTime(data.cache_last_updated)}`}>
+        <span aria-label={`Last updated ${fmtTime(data.cache_last_updated)}`}>
           <span aria-hidden="true">🕐</span> Updated {timeAgo(data.cache_last_updated)}
         </span>
         {status && (
@@ -96,23 +81,7 @@ export default function Dashboard() {
                   <span className="card-title">{f.zone_name}</span>
                   <span className="setting-value">{f.zone_id}</span>
                 </div>
-                <div className="badge-row">
-                  {f.has_active_advisory && (
-                    <span className="badge badge-danger" role="status" aria-label="Active weather advisory">
-                      <span aria-hidden="true">⚠</span> Active Advisory
-                    </span>
-                  )}
-                  {f.has_upcoming_advisory && (
-                    <span className="badge badge-warning" role="status" aria-label="Upcoming weather advisory">
-                      <span aria-hidden="true">🔜</span> Upcoming
-                    </span>
-                  )}
-                  {!f.has_active_advisory && !f.has_upcoming_advisory && (
-                    <span className="badge badge-ok" role="status" aria-label="No advisories">
-                      <span aria-hidden="true">✓</span> Clear
-                    </span>
-                  )}
-                </div>
+                <AdvisoryBadges forecast={f} />
                 {f.advisory_text && (
                   <div className="setting-value" style={{ color: "var(--warning)", marginBottom: "0.75rem" }}>
                     {f.advisory_text}

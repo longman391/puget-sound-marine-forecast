@@ -7,7 +7,9 @@ returned verbatim as a text blob — no regex decomposition of wind/waves/weathe
 
 import logging
 import re
-from datetime import datetime
+from datetime import UTC, datetime
+
+from dateutil import parser as dateutil_parser
 
 from app.models import ZONES
 
@@ -18,13 +20,6 @@ _ADVISORY_PATTERN = re.compile(r"\.\.\.(.*?)\.\.\.", re.DOTALL)
 
 # Keywords that indicate an advisory/warning/watch
 _ADVISORY_KEYWORDS = {"ADVISORY", "WARNING", "WATCH", "STATEMENT", "ALERT"}
-
-# Phrases indicating a currently active advisory
-_ACTIVE_PHRASES = re.compile(
-    r"IN EFFECT|UNTIL|THROUGH (?:THIS|TONIGHT|TODAY|EARLY|LATE|MONDAY|TUESDAY|WEDNESDAY"
-    r"|THURSDAY|FRIDAY|SATURDAY|SUNDAY)",
-    re.IGNORECASE,
-)
 
 # Phrases indicating an upcoming (future) advisory
 _UPCOMING_PHRASES = re.compile(
@@ -56,10 +51,8 @@ def parse_zone_forecast(
     for adv in advisories:
         advisory_texts.append(adv)
         is_upcoming = bool(_UPCOMING_PHRASES.search(adv))
-        # If explicitly upcoming (FROM, BEGINNING, etc.), don't also mark as active
-        # even if it contains "THROUGH" (which describes the future time range)
-        is_active = not is_upcoming and (bool(_ACTIVE_PHRASES.search(adv)) or True)
-        if is_active:
+        # Any advisory that isn't explicitly upcoming is treated as active
+        if not is_upcoming:
             has_active = True
         if is_upcoming:
             has_upcoming = True
@@ -77,12 +70,10 @@ def parse_zone_forecast(
     }
 
 
-def parse_synopsis(raw_html: str, fetched_at: datetime) -> dict:
-    """Parse the UW combined forecast HTML to extract the synopsis section.
+def parse_synopsis(raw_html: str, fetched_at: datetime):
+    """Parse the UW combined forecast HTML to extract the synopsis section."""
+    from app.models import SynopsisResponse
 
-    Returns a dict matching the SynopsisResponse model fields.
-    """
-    # The synopsis is in the PZZ100 section, inside a <blockquote>
     synopsis_match = re.search(
         r"PZZ100.*?<blockquote>(.*?)</blockquote>",
         raw_html,
@@ -91,7 +82,6 @@ def parse_synopsis(raw_html: str, fetched_at: datetime) -> dict:
 
     if synopsis_match:
         text = synopsis_match.group(1)
-        # Strip HTML tags and normalize whitespace
         text = re.sub(r"<[^>]+>", "\n", text)
         text = re.sub(r"\n{3,}", "\n\n", text)
         text = text.strip()
@@ -99,14 +89,9 @@ def parse_synopsis(raw_html: str, fetched_at: datetime) -> dict:
         text = ""
         logger.warning("Could not extract synopsis from UW combined forecast")
 
-    # Try to extract issued time from the header
     issued = _extract_issued(raw_html.replace("<br>", "\n"))
 
-    return {
-        "synopsis_text": text,
-        "issued": issued,
-        "fetched_at": fetched_at,
-    }
+    return SynopsisResponse(synopsis_text=text, issued=issued, fetched_at=fetched_at)
 
 
 # --- Private helpers ---
@@ -133,10 +118,7 @@ def _extract_issued(text: str) -> datetime | None:
 
     timestamp_str = match.group(1).strip()
     try:
-        from dateutil import parser as dateutil_parser
-
         # NOAA uses compact time format: "310 AM" means "3:10 AM"
-        # Insert a colon to make it parseable: "310" -> "3:10"
         fixed = re.sub(r"^(\d{1,2})(\d{2})\s+([AP]M)", r"\1:\2 \3", timestamp_str)
         return dateutil_parser.parse(fixed)
     except Exception:
@@ -145,8 +127,11 @@ def _extract_issued(text: str) -> datetime | None:
 
 
 def _extract_expires(text: str, zone_id: str) -> datetime | None:
-    """Extract the expiration code from the zone header."""
-    # Pattern: PZZ135-082315-  (DDHHMM)
+    """Extract the expiration code from the zone header.
+
+    Uses the issued timestamp's date as anchor rather than now() to avoid
+    timezone and day-rollover issues.
+    """
     pattern = rf"{re.escape(zone_id)}-(\d{{6}})-"
     match = re.search(pattern, text, re.IGNORECASE)
     if not match:
@@ -157,15 +142,17 @@ def _extract_expires(text: str, zone_id: str) -> datetime | None:
         day = int(code[:2])
         hour = int(code[2:4])
         minute = int(code[4:6])
-        now = datetime.now()
-        expires = now.replace(day=day, hour=hour, minute=minute, second=0, microsecond=0)
-        if expires < now:
-            # Assume next month
+
+        # Use issued time as date anchor when available, else UTC now
+        issued = _extract_issued(text)
+        anchor = issued if issued else datetime.now(tz=UTC)
+
+        expires = anchor.replace(day=day, hour=hour, minute=minute, second=0, microsecond=0)
+        if expires < anchor:
             month = expires.month + 1
             year = expires.year
             if month > 12:
-                month = 1
-                year += 1
+                month, year = 1, year + 1
             expires = expires.replace(year=year, month=month)
         return expires
     except (ValueError, OverflowError):
