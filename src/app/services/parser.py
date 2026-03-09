@@ -41,7 +41,7 @@ def parse_zone_forecast(
     zone_name = _extract_zone_name(raw_text, zone_id_upper)
     issued = _extract_issued(raw_text)
     expires = _extract_expires(raw_text, zone_id_upper)
-    forecast_text = _extract_forecast_body(raw_text)
+    forecast_text = _extract_forecast_body(raw_text, zone_id_upper)
     advisories = _extract_advisories(raw_text)
 
     has_active = False
@@ -160,19 +160,30 @@ def _extract_expires(text: str, zone_id: str) -> datetime | None:
         return None
 
 
-def _extract_forecast_body(text: str) -> str:
-    """Extract the forecast body text (all periods) from the raw text.
+def _extract_forecast_body(text: str, zone_id: str = "") -> str:
+    """Extract the forecast body text from the raw text.
 
-    Captures everything from the first period marker (e.g., '.TODAY...')
-    through the end-of-forecast marker ('$$').
+    Strips the NOAA file preamble by finding the zone header block
+    (PZZ###-DDDDDD-), then returns everything after the header's
+    timestamp line through the $$ end marker.
     """
-    # Find the first period marker
-    period_start = re.search(r"^\.[A-Z]", text, re.MULTILINE)
-    if not period_start:
-        # If no period markers, return everything after the header
-        return text.strip()
+    # Find the zone header to skip the file preamble
+    if zone_id:
+        header_match = re.search(
+            rf"{re.escape(zone_id)}-\d+-\n.+?-\n.+?\n",
+            text,
+            re.IGNORECASE,
+        )
+        if header_match:
+            text = text[header_match.end() :]
 
-    body = text[period_start.start() :]
+    # Prefer starting at the first period marker (e.g., .TODAY...)
+    period_start = re.search(r"^\.[A-Z]", text, re.MULTILINE)
+    if period_start:
+        body = text[period_start.start() :]
+    else:
+        # No period markers (e.g., PZZ110 bar conditions) — use remaining text
+        body = text.strip()
 
     # Trim at the $$ marker
     end_marker = body.find("$$")
