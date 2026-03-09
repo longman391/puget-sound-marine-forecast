@@ -1,48 +1,111 @@
-"""
-Pytest configuration and fixtures for Puget Sound Marine Forecast API tests
-"""
+"""Shared fixtures for tests."""
 
-import os
 import sys
-from collections.abc import AsyncGenerator
+from pathlib import Path
 
 import pytest
-
-# Add src directory to path for imports
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
-
 from fastapi.testclient import TestClient
-from httpx import AsyncClient
+
+# Ensure src/ is on the path
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
 
-@pytest.fixture
-def test_client():
-    """Create a test client for the FastAPI application"""
-    from main import app
+SAMPLE_FORECAST_TEXT = """\
+Expires:202603082315;;837763
+FZUS56 KSEW 081010
+CWFSEW
 
-    return TestClient(app)
+Coastal Waters Forecast for Washington
+National Weather Service Seattle WA
+310 AM PDT Sun Mar 8 2026
 
-
-@pytest.fixture
-async def async_client() -> AsyncGenerator[AsyncClient, None]:
-    """Create an async test client for the FastAPI application"""
-    from main import app
-
-    async with AsyncClient(app=app, base_url="http://test") as client:
-        yield client
+Inland waters of western Washington and the northern and central
+Washington coastal waters including the Olympic Coast National
+Marine Sanctuary
 
 
-@pytest.fixture
-def sample_forecast_text():
-    """Sample NOAA forecast text for testing parser"""
-    return """PZZ133-061800-
-Northern Inland Waters Including The San Juan Islands-
-1234 AM PST Mon Jan 6 2025
+PZZ135-082315-
+Puget Sound and Hood Canal-
+310 AM PDT Sun Mar 8 2026
 
-.TONIGHT...N wind 10 kt. Wind waves 1 ft or less.
-.TUE...N wind 10 kt. Wind waves 1 ft or less.
-.TUE NIGHT...N wind 10 kt. Wind waves 1 ft or less.
-.WED...N wind 10 kt. Wind waves 1 ft or less.
+...SMALL CRAFT ADVISORY IN EFFECT UNTIL 11 AM PST THIS MORNING...
+
+.TODAY...SW wind 10 to 15 kt with gusts to 25 kt, becoming NW 10
+to 15 kt this afternoon. Waves around 2 ft or less. Rain likely
+early this morning, then a chance of rain late this morning and
+afternoon.
+.TONIGHT...SW wind 10 to 15 kt, easing to 5 to 10 kt after
+midnight. Waves around 2 ft or less. Rain likely in the evening,
+then rain and snow after midnight.
+.MON...SW wind 10 to 15 kt. Waves around 2 ft or less. Snow in
+the morning. Rain.
 
 $$
 """
+
+SAMPLE_UPCOMING_ADVISORY_TEXT = """\
+PZZ133-082315-
+Northern Inland Waters Including The San Juan Islands-
+310 AM PDT Sun Mar 8 2026
+
+...GALE WARNING FROM WEDNESDAY EVENING THROUGH THURSDAY MORNING...
+
+.TODAY...NW wind 10 to 15 kt. Waves around 2 ft or less.
+.TONIGHT...W wind 5 to 10 kt. Waves around 2 ft or less.
+
+$$
+"""
+
+SAMPLE_NO_ADVISORY_TEXT = """\
+PZZ134-082315-
+Admiralty Inlet-
+310 AM PDT Sun Mar 8 2026
+
+.TODAY...SW wind 10 to 15 kt. Waves around 2 ft or less. Rain.
+.TONIGHT...W wind 5 to 10 kt. Waves around 2 ft or less.
+
+$$
+"""
+
+SAMPLE_SYNOPSIS_HTML = (
+    "<HTML><head/><TITLE>Washington Marine Forecast</TITLE>\n"
+    "<b>\n"
+    "<br>620 <br>FZUS56 KSEW 081010<br>CWFSEW<br><br>"
+    "Coastal Waters Forecast for Washington<br>"
+    "National Weather Service Seattle WA<br>"
+    "310 AM PDT Sun Mar 8 2026<br><br>"
+    "PZZ100-082315-<br>310 AM PDT Sun Mar 8 2026<br><br>"
+    "</b><blockquote>"
+    "SYNOPSIS FOR THE NORTHERN AND CENTRAL WASHINGTON COASTAL AND INLAND\n"
+    "WATERS...A front will cross the waters on Sunday, and move inland\n"
+    "through early Monday. A stronger front then arrives around\n"
+    "Wednesday, with a return of stronger southerly winds.\n"
+    "</blockquote><p><i>$$\n"
+)
+
+
+@pytest.fixture
+def client():
+    """Create a test client with the cache startup disabled."""
+    from app.config import settings
+
+    # Disable auth for test client by default
+    original_key = settings.api_key
+    settings.api_key = ""
+
+    # Patch the lifespan to skip the actual network fetch
+    from contextlib import asynccontextmanager
+
+    @asynccontextmanager
+    async def noop_lifespan(app):
+        yield
+
+    from app.main import create_app
+
+    test_app = create_app()
+    test_app.router.lifespan_context = noop_lifespan
+
+    with TestClient(test_app) as c:
+        yield c
+
+    settings.api_key = original_key

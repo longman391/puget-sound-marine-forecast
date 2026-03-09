@@ -1,388 +1,147 @@
 # Deployment Guide
 
-This guide covers deploying the Puget Sound Marine Forecast API to various environments.
-
-## Table of Contents
-
-- [Prerequisites](#prerequisites)
-- [Azure Container Apps Deployment](#azure-container-apps-deployment)
-- [Environment Configuration](#environment-configuration)
-- [Infrastructure as Code](#infrastructure-as-code)
-- [CI/CD Automation](#cicd-automation)
-- [Monitoring and Maintenance](#monitoring-and-maintenance)
-
-## Prerequisites
-
-### Required Tools
-
-- **Azure CLI**: Version 2.50.0 or later
-- **Azure Developer CLI (azd)**: Latest version
-- **Docker**: For local container testing
-- **Python 3.11+**: For local development
-- **Git**: For version control
-
-### Azure Requirements
-
-- Active Azure subscription
-- Service Principal with Contributor role
-- Resource Group permissions
-
-## Azure Container Apps Deployment
-
-### Option 1: Using Azure Developer CLI (Recommended)
-
-The repository is configured with `azure.yaml` for streamlined deployment using `azd`.
-
-#### Initial Setup
+## Docker (any host)
 
 ```bash
-# Install Azure Developer CLI
-# Windows: winget install microsoft.azd
-# macOS: brew tap azure/azd && brew install azd
-# Linux: curl -fsSL https://aka.ms/install-azd.sh | bash
-
-# Initialize the project
-azd init
-
-# Authenticate to Azure
-azd auth login
-
-# Provision infrastructure and deploy
-azd up
+docker run -d \
+  --name marine-forecast \
+  -p 8000:8000 \
+  -e API_KEY=your-secret-key \
+  -e CACHE_INTERVAL_MINUTES=60 \
+  --restart unless-stopped \
+  ghcr.io/longman391/puget-sound-marine-forecast:latest
 ```
 
-#### Configuration
-
-When running `azd up`, you'll be prompted for:
-- **Environment Name**: e.g., `dev`, `test`, `prod`
-- **Azure Location**: e.g., `westus2`, `eastus`
-- **Subscription**: Your Azure subscription
-
-#### Subsequent Deployments
+Or with docker-compose (clone the repo first):
 
 ```bash
-# Deploy code changes only
-azd deploy
-
-# Provision infrastructure changes
-azd provision
-
-# Full redeploy
-azd up
+cp .env.example .env
+# Edit .env with your settings
+docker compose up -d
 ```
 
-### Option 2: Using GitHub Actions
+## Unraid
 
-The repository includes automated deployment workflows.
+### Option A: Community Applications (when published)
 
-#### Setup Secrets
+1. Open the **Apps** tab in Unraid
+2. Search for "Puget Sound Marine Forecast"
+3. Click **Install** and configure the template variables
+4. Click **Apply**
 
-Configure these GitHub secrets in your repository settings:
+### Option B: Manual install via template URL
 
+1. Go to **Docker** → **Add Container**
+2. Click **Template Repositories** at the bottom
+3. Add: `https://github.com/longman391/puget-sound-marine-forecast`
+4. Click **Save**, then select "PugetSoundMarineForecast" from the template dropdown
+5. Configure variables and click **Apply**
+
+### Option C: Manual Docker install on Unraid
+
+1. Go to **Docker** → **Add Container**
+2. Set **Repository** to `ghcr.io/longman391/puget-sound-marine-forecast:latest`
+3. Add a port mapping: Host `8000` → Container `8000`
+4. Add environment variables as needed (see Configuration below)
+5. Click **Apply**
+
+## Making it Internet-Facing (forecast.longmanhome.com)
+
+For Dakboard, external agents, or public access, the service needs to be reachable
+from the internet. Here are three approaches, from simplest to most flexible:
+
+### Option 1: Cloudflare Tunnel (recommended)
+
+The safest way to expose a home-hosted service — no port forwarding required.
+
+1. Install `cloudflared` on your Unraid server (available as a Docker container)
+2. Create a tunnel: `cloudflared tunnel create marine-forecast`
+3. Configure the tunnel to point `forecast.longmanhome.com` → `http://localhost:8000`
+4. Add a CNAME record in Cloudflare DNS pointing to the tunnel
+
+```yaml
+# cloudflared config.yml
+tunnel: <tunnel-id>
+credentials-file: /root/.cloudflared/<tunnel-id>.json
+ingress:
+  - hostname: forecast.longmanhome.com
+    service: http://localhost:8000
+  - service: http_status:404
 ```
-AZURE_CLIENT_ID: <service-principal-client-id>
-AZURE_TENANT_ID: <azure-tenant-id>
-AZURE_SUBSCRIPTION_ID: <azure-subscription-id>
-```
 
-#### Create Service Principal
+**Pros:** No ports exposed, automatic HTTPS, Cloudflare DDoS protection.
+**Cons:** Requires a Cloudflare account and domain managed by Cloudflare.
+
+### Option 2: Nginx Proxy Manager (Unraid)
+
+If you already run Nginx Proxy Manager on Unraid:
+
+1. Add a new proxy host for `forecast.longmanhome.com`
+2. Set the forward hostname/IP to the Unraid server IP and port `8000`
+3. Enable SSL via Let's Encrypt
+4. Set up port forwarding on your router: external 443 → Unraid NPM port
+
+### Option 3: Azure Container App (secondary deployment)
+
+Deploy the same Docker image to Azure as a secondary target:
 
 ```bash
-# Create service principal for GitHub Actions
-az ad sp create-for-rbac \
-  --name "github-puget-sound-marine-forecast" \
-  --role contributor \
-  --scopes /subscriptions/<SUBSCRIPTION_ID> \
-  --sdk-auth
+# One-time setup
+az containerapp up \
+  --name marine-forecast \
+  --resource-group marine-forecast-rg \
+  --image ghcr.io/longman391/puget-sound-marine-forecast:latest \
+  --target-port 8000 \
+  --env-vars API_KEY=your-key CACHE_INTERVAL_MINUTES=60 \
+  --ingress external
 
-# Configure federated credentials for GitHub Actions
-az ad app federated-credential create \
-  --id <APP_ID> \
-  --parameters '{
-    "name": "github-deploy",
-    "issuer": "https://token.actions.githubusercontent.com",
-    "subject": "repo:longman391/puget-sound-marine-forecast:ref:refs/heads/main",
-    "audiences": ["api://AzureADTokenExchange"]
-  }'
+# Point forecast.longmanhome.com to the Azure FQDN via CNAME
 ```
 
-#### Trigger Deployment
+**Pros:** Always available, no home network dependency.
+**Cons:** Costs money (Azure Container Apps consumption plan is ~$0-5/month for low traffic).
 
-- **Automatic**: Push to `main` branch with changes to `infra/` directory
-- **Manual**: Go to Actions → Infrastructure Deployment → Run workflow
+## Authentication for External Clients
 
-### Option 3: Manual Azure Deployment
+### Home Assistant
 
-#### Step 1: Build and Push Container
-
-```bash
-# Build container
-docker build -t puget-sound-marine-forecast:latest .
-
-# Login to Azure Container Registry
-az acr login --name <your-acr-name>
-
-# Tag and push
-docker tag puget-sound-marine-forecast:latest \
-  <your-acr-name>.azurecr.io/puget-sound-marine-forecast:latest
-docker push <your-acr-name>.azurecr.io/puget-sound-marine-forecast:latest
+```yaml
+# configuration.yaml
+sensor:
+  - platform: rest
+    name: puget_sound_forecast
+    resource: https://forecast.longmanhome.com/api/v1/forecast/PZZ135
+    headers:
+      X-API-Key: your-api-key
+    value_template: "{{ value_json.has_active_advisory }}"
+    json_attributes:
+      - zone_name
+      - forecast_text
+      - advisory_text
+      - has_active_advisory
+      - has_upcoming_advisory
+    scan_interval: 3600
 ```
 
-#### Step 2: Deploy Infrastructure
+### Dakboard
 
-```bash
-# Deploy using Bicep
-az deployment sub create \
-  --name psm-deployment \
-  --location westus2 \
-  --template-file infra/main.bicep \
-  --parameters infra/main.parameters.json \
-  --parameters environmentName=prod
+Dakboard REST widgets use URL-based auth:
+
+```
+https://forecast.longmanhome.com/api/v1/forecast/PZZ135?api_key=your-api-key
 ```
 
-#### Step 3: Deploy Container App
-
-```bash
-# Get outputs from infrastructure deployment
-CONTAINER_APP_NAME=$(az deployment sub show \
-  --name psm-deployment \
-  --query properties.outputs.SERVICE_MARINE_FORECAST_API_NAME.value \
-  -o tsv)
-
-RESOURCE_GROUP=$(az deployment sub show \
-  --name psm-deployment \
-  --query properties.outputs.RESOURCE_GROUP_NAME.value \
-  -o tsv)
-
-# Update container app
-az containerapp update \
-  --name $CONTAINER_APP_NAME \
-  --resource-group $RESOURCE_GROUP \
-  --image <your-acr-name>.azurecr.io/puget-sound-marine-forecast:latest
-```
-
-## Environment Configuration
-
-### Development Environment
-
-```bash
-# Use development configuration
-cp .env.development .env
-
-# Start locally
-python src/main.py
-```
-
-### Test Environment
-
-```bash
-# Deploy to test environment
-azd env select test
-azd up
-```
-
-### Production Environment
-
-```bash
-# Deploy to production
-azd env select prod
-azd up
-```
-
-### Environment Variables
-
-Each environment requires configuration of:
-
-| Variable | Description | Example |
-|----------|-------------|---------|
-| `ENVIRONMENT` | Environment name | `production` |
-| `ALLOWED_ORIGINS` | CORS origins | `https://yourdomain.com` |
-| `ALLOWED_HOSTS` | Valid hosts | `yourdomain.com` |
-| `LOG_LEVEL` | Logging level | `WARNING` |
-| `CACHE_UPDATE_INTERVAL_MINUTES` | Cache refresh | `120` |
-
-**Production Note**: Store sensitive configuration in Azure Key Vault, not in `.env` files.
-
-## Infrastructure as Code
-
-### Bicep Files
-
-- **`infra/main.bicep`**: Main deployment template (subscription scope)
-- **`infra/main-resources.bicep`**: Resource definitions
-- **`infra/main.parameters.json`**: Environment-specific parameters
-
-### Infrastructure Components
-
-The Bicep templates create:
-
-- **Resource Group**: Organized by environment
-- **Container Registry**: For Docker images
-- **Container Apps Environment**: Managed container runtime
-- **Container App**: The API service
-- **Log Analytics Workspace**: Monitoring and logs
-- **Application Insights**: Telemetry and performance
-
-### Validate Infrastructure
-
-```bash
-# Validate Bicep files
-az bicep build --file infra/main.bicep
-az bicep build --file infra/main-resources.bicep
-
-# What-if analysis
-az deployment sub what-if \
-  --location westus2 \
-  --template-file infra/main.bicep \
-  --parameters infra/main.parameters.json
-```
-
-## CI/CD Automation
-
-### GitHub Actions Workflows
-
-- **`.github/workflows/ci.yml`**: Build, test, lint, security checks
-- **`.github/workflows/infra-deploy.yml`**: Infrastructure deployment
-
-### CI Pipeline
-
-On every push/PR to `main`:
-1. Type checking with mypy
-2. Code linting with black and ruff
-3. Security scanning (secrets, vulnerabilities)
-4. Unit tests with 57% coverage requirement
-5. Upload coverage to Codecov
-
-### CD Pipeline
-
-Infrastructure deployment triggered by:
-- Manual workflow dispatch
-- Changes to `infra/` directory
-- Scheduled deployments (optional)
-
-## Monitoring and Maintenance
-
-### Health Checks
-
-The API provides several monitoring endpoints:
-
-- `GET /health`: Application health status
-- `GET /cache/status`: Cache health and statistics
-- `GET /`: API status and version
-
-### Azure Monitoring
-
-```bash
-# View application logs
-az containerapp logs show \
-  --name <app-name> \
-  --resource-group <rg-name> \
-  --follow
-
-# View metrics
-az monitor metrics list \
-  --resource <app-id> \
-  --metric-names RequestCount,ResponseTime
-```
-
-### Application Insights
-
-Configure Application Insights in `infra/main-resources.bicep` and view:
-- Request rates and response times
-- Dependency tracking (NOAA API calls)
-- Exception tracking
-- Custom metrics
-
-### Maintenance Tasks
-
-#### Update Dependencies
-
-```bash
-# Check for vulnerabilities
-pip-audit
-
-# Update dependencies
-pip install --upgrade pip
-pip list --outdated
-
-# Update constraints.txt after testing
-```
-
-#### Rotate Secrets
-
-```bash
-# Update Azure secrets
-az containerapp secret set \
-  --name <app-name> \
-  --resource-group <rg-name> \
-  --secrets api-key=<new-value>
-```
-
-#### Scale Application
-
-```bash
-# Scale up
-az containerapp update \
-  --name <app-name> \
-  --resource-group <rg-name> \
-  --min-replicas 2 \
-  --max-replicas 10
-```
-
-## Troubleshooting
-
-### Common Issues
-
-#### 1. Container Build Failures
-
-```bash
-# Test locally
-docker build -t test .
-docker run -p 8000:8000 test
-```
-
-#### 2. Deployment Failures
-
-```bash
-# Check deployment logs
-az deployment sub show --name <deployment-name>
-
-# Validate Bicep
-az bicep build --file infra/main.bicep
-```
-
-#### 3. Runtime Errors
-
-```bash
-# Check container logs
-az containerapp logs show --name <app-name> --follow
-
-# Check environment variables
-az containerapp show --name <app-name> --query properties.configuration.secrets
-```
-
-### Getting Help
-
-- Review [Azure Container Apps documentation](https://learn.microsoft.com/azure/container-apps/)
-- Check GitHub Issues
-- Review application logs in Azure Portal
-
-## Security Considerations
-
-- ✅ Never commit secrets or credentials
-- ✅ Use Azure Key Vault for production secrets
-- ✅ Enable managed identity for Azure resources
-- ✅ Configure network isolation (optional)
-- ✅ Enable Azure DDoS protection
-- ✅ Review and apply security recommendations from Azure Security Center
-
-## Cost Optimization
-
-- Use consumption-based pricing for Container Apps
-- Configure auto-scaling based on load
-- Use Azure Cost Management for monitoring
-- Consider Azure Reserved Instances for production
-
----
-
-**Last Updated**: 2024-02-09  
-**Version**: 1.0.0
+Configure as a "Custom" widget with JSON path to extract the fields you want.
+
+## Publishing to Unraid Community Apps Store
+
+When ready to publish to the official Community Apps store:
+
+1. Ensure the Docker image is publicly available on GHCR (it will be after the
+   first `publish.yml` workflow run)
+2. Create an Unraid forum support thread for the app
+3. Update the `<Support>` URL in `unraid/puget-sound-marine-forecast.xml`
+4. Submit the template to the Community Applications maintainers via the
+   [Unraid forums](https://forums.unraid.net/forum/38-docker-containers/)
+5. Optionally create a dedicated template repo (`longman391/unraid-templates`)
+   with just the XML file, if the CA team prefers that structure

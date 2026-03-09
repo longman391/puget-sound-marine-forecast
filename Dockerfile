@@ -1,39 +1,38 @@
-# Use Python 3.11 slim image
-FROM python:3.11-slim
+# --- Stage 1: Frontend build ---
+FROM node:22-slim AS frontend-build
+WORKDIR /frontend
+COPY frontend/package*.json ./
+RUN npm ci --quiet
+COPY frontend/ ./
+RUN npm run build
 
-# Set working directory in container
+# --- Stage 2: Python runtime ---
+FROM python:3.12-slim
+
 WORKDIR /app
 
-# Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PORT=8000
 
-# Install system dependencies
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends \
-        gcc \
-        python3-dev \
-    && rm -rf /var/lib/apt/lists/*
-
-# Copy requirements and install Python dependencies
-COPY requirements-prod.txt .
-RUN pip install --no-cache-dir -r requirements-prod.txt
+# Install only runtime deps (no gcc needed for pure-Python packages)
+COPY pyproject.toml ./
+RUN pip install --no-cache-dir . && pip cache purge
 
 # Copy source code
-COPY src/ .
+COPY src/ ./src/
 
-# Create non-root user for security
+# Copy built frontend
+COPY --from=frontend-build /frontend/dist ./frontend/dist
+
+# Create non-root user
 RUN adduser --disabled-password --gecos '' --shell /bin/bash appuser \
     && chown -R appuser:appuser /app
 USER appuser
 
-# Expose port
 EXPOSE 8000
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD python -c "import httpx; httpx.get('http://localhost:8000/health', timeout=5)" || exit 1
+HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/health', timeout=5)" || exit 1
 
-# Run the application
-CMD ["python", "main.py"]
+CMD ["python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--app-dir", "src"]
