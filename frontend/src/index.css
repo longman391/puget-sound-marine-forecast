@@ -83,7 +83,7 @@ nav .nav-links a:hover, nav .nav-links a.active {
 
 /* Clickable card links */
 .card-link {
-  display: block;
+  display: flex;
   text-decoration: none;
   color: inherit;
   border-radius: var(--radius);
@@ -91,11 +91,19 @@ nav .nav-links a:hover, nav .nav-links a.active {
 .card-link .card {
   cursor: pointer;
   position: relative;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 .card-link:hover .card,
 .card-link:focus-visible .card {
   border-color: var(--accent);
   box-shadow: 0 0 0 1px var(--accent);
+}
+
+/* Let forecast preview fill remaining card space */
+.card-link .forecast-preview {
+  flex: 1;
 }
 
 /* Advisory card accents */
