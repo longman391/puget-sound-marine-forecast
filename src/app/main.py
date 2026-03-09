@@ -30,10 +30,21 @@ async def lifespan(app: FastAPI):
     """Startup/shutdown lifecycle manager."""
     logger.info("Starting Puget Sound Marine Forecast API v%s", __version__)
     await cache.start_background_refresh()
-    yield
-    logger.info("Shutting down...")
-    await cache.stop_background_refresh()
-    await close_client()
+
+    # Initialize MCP session manager if MCP is enabled
+    if settings.mcp_enabled:
+        from app.mcp.server import mcp_server
+
+        async with mcp_server.session_manager.run():
+            yield
+            logger.info("Shutting down...")
+            await cache.stop_background_refresh()
+            await close_client()
+    else:
+        yield
+        logger.info("Shutting down...")
+        await cache.stop_background_refresh()
+        await close_client()
 
 
 def create_app() -> FastAPI:
@@ -69,9 +80,14 @@ def create_app() -> FastAPI:
 
     # Mount MCP server if enabled
     if settings.mcp_enabled:
+        # Mount the raw Starlette app without its own lifespan — we manage
+        # the session_manager in our own lifespan above.
+
         from app.mcp.server import mcp_server
 
         mcp_app = mcp_server.streamable_http_app()
+        # Replace lifespan to avoid double-init of session manager
+        mcp_app.router.lifespan_context = None
         app.mount("/mcp", mcp_app)
         logger.info("MCP server mounted at /mcp")
 
