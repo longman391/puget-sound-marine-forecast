@@ -12,7 +12,7 @@ import {
   useSensors,
 } from "@dnd-kit/core";
 import type { DragEndEvent } from "@dnd-kit/core";
-import { SortableContext, rectSortingStrategy, sortableKeyboardCoordinates } from "@dnd-kit/sortable";
+import { SortableContext, sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 
 function loadPinned(): string[] {
   try {
@@ -192,7 +192,7 @@ export default function Dashboard() {
       </div>
 
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-        <SortableContext items={allIds} strategy={rectSortingStrategy}>
+        <SortableContext items={allIds}>
           {pinnedForecasts.length > 0 && (
             <>
               <div className="section-label">Pinned</div>
