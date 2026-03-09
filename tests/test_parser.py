@@ -101,9 +101,9 @@ class TestParseZoneForecast:
 class TestParseSynopsis:
     def test_extracts_synopsis_text(self):
         result = parse_synopsis(SAMPLE_SYNOPSIS_HTML, datetime.now())
-        assert "SYNOPSIS" in result["synopsis_text"]
-        assert "front will cross the waters" in result["synopsis_text"]
+        assert "SYNOPSIS" in result.synopsis_text
+        assert "front will cross the waters" in result.synopsis_text
 
     def test_handles_missing_synopsis(self):
         result = parse_synopsis("<html>no synopsis</html>", datetime.now())
-        assert result["synopsis_text"] == ""
+        assert result.synopsis_text == ""
