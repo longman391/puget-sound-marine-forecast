@@ -1,5 +1,4 @@
 import { useSortable } from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
 import { Link } from "react-router-dom";
 import type { ZoneForecast } from "../api";
 import { AdvisoryBadges } from "./AdvisoryBadges";
@@ -14,9 +13,15 @@ export function ZoneCard({ forecast: f, isPinned, onTogglePin }: Props) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: f.zone_id });
 
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
+  const style: React.CSSProperties = {
+    // Only apply transform during active drag to avoid fighting CSS grid
+    ...(transform
+      ? {
+          transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
+          transition,
+          zIndex: isDragging ? 10 : undefined,
+        }
+      : {}),
     opacity: isDragging ? 0.5 : 1,
   };
 
