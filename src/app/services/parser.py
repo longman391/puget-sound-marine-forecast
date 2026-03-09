@@ -15,8 +15,8 @@ from app.models import ZONES
 
 logger = logging.getLogger(__name__)
 
-# Advisory banners appear between triple-dot markers: ...TEXT...
-_ADVISORY_PATTERN = re.compile(r"\.\.\.(.*?)\.\.\.", re.DOTALL)
+# Advisory banners appear on a single line between triple-dot markers: ...TEXT...
+_ADVISORY_PATTERN = re.compile(r"\.\.\.(.*?)\.\.\.")
 
 # Keywords that indicate an advisory/warning/watch
 _ADVISORY_KEYWORDS = {"ADVISORY", "WARNING", "WATCH", "STATEMENT", "ALERT"}
