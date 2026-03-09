@@ -20,7 +20,7 @@ mcp_server = FastMCP(
         "Use get_forecast to retrieve a specific zone's forecast, list_zones to see available "
         "zones, or get_advisory_status to check for active warnings across all zones."
     ),
-    streamable_http_path="/mcp",
+    streamable_http_path="/",
     stateless_http=True,
 )
 
