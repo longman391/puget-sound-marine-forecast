@@ -1,0 +1,105 @@
+<?xml version="1.0"?>
+<Container version="2">
+  <Name>PugetSoundMarineForecast</Name>
+  <Repository>ghcr.io/longman391/puget-sound-marine-forecast:latest</Repository>
+  <Registry>https://github.com/longman391/puget-sound-marine-forecast/pkgs/container/puget-sound-marine-forecast</Registry>
+  <Branch>
+    <Tag>latest</Tag>
+    <TagDescription>Latest stable release</TagDescription>
+  </Branch>
+  <Network>bridge</Network>
+  <Shell>bash</Shell>
+  <Privileged>false</Privileged>
+  <Support>https://github.com/longman391/puget-sound-marine-forecast/issues</Support>
+  <Project>https://github.com/longman391/puget-sound-marine-forecast</Project>
+  <Overview>
+    Marine weather forecast service for Puget Sound and Washington coastal waters.
+    Fetches NOAA forecasts hourly, detects advisories/warnings, and serves them via
+    a REST API, MCP server (for AI agents), and a built-in web dashboard.
+
+    Designed for boaters, sailors, and marine weather enthusiasts in the Pacific Northwest.
+    Compatible with Home Assistant, Dakboard, and any REST client.
+  </Overview>
+  <Category>Tools: Weather:</Category>
+  <WebUI>http://[IP]:[PORT:8000]</WebUI>
+  <Icon>https://raw.githubusercontent.com/longman391/puget-sound-marine-forecast/main/unraid/icon.png</Icon>
+  <ExtraParams>--restart=unless-stopped</ExtraParams>
+  <DateInstalled></DateInstalled>
+  <Description>
+    Puget Sound Marine Forecast — REST API, MCP server, and web dashboard for
+    NOAA marine weather forecasts. Caches forecasts hourly with advisory detection.
+  </Description>
+
+  <!-- Port mapping -->
+  <Config
+    Name="Web UI Port"
+    Target="8000"
+    Default="8000"
+    Mode="tcp"
+    Description="Port for the web UI and API"
+    Type="Port"
+    Display="always"
+    Required="true"
+    Mask="false">8000</Config>
+
+  <!-- Environment variables -->
+  <Config
+    Name="API Key"
+    Target="API_KEY"
+    Default=""
+    Description="API key for authentication. Leave empty to disable auth (open access on local network)."
+    Type="Variable"
+    Display="always"
+    Required="false"
+    Mask="true"></Config>
+
+  <Config
+    Name="Cache Interval (minutes)"
+    Target="CACHE_INTERVAL_MINUTES"
+    Default="60"
+    Description="How often to refresh forecasts from NOAA (in minutes)."
+    Type="Variable"
+    Display="always"
+    Required="false"
+    Mask="false">60</Config>
+
+  <Config
+    Name="Allowed Origins (CORS)"
+    Target="ALLOWED_ORIGINS"
+    Default="*"
+    Description="Comma-separated list of allowed CORS origins, or * for all."
+    Type="Variable"
+    Display="advanced"
+    Required="false"
+    Mask="false">*</Config>
+
+  <Config
+    Name="MCP Server"
+    Target="MCP_ENABLED"
+    Default="true"
+    Description="Enable the MCP server endpoint for AI agent integration."
+    Type="Variable"
+    Display="advanced"
+    Required="false"
+    Mask="false">true</Config>
+
+  <Config
+    Name="Log Level"
+    Target="LOG_LEVEL"
+    Default="INFO"
+    Description="Logging level (DEBUG, INFO, WARNING, ERROR)."
+    Type="Variable"
+    Display="advanced"
+    Required="false"
+    Mask="false">INFO</Config>
+
+  <Config
+    Name="Timezone"
+    Target="TZ"
+    Default="America/Los_Angeles"
+    Description="Timezone for display purposes."
+    Type="Variable"
+    Display="advanced"
+    Required="false"
+    Mask="false">America/Los_Angeles</Config>
+</Container>
