@@ -3,7 +3,7 @@ name = "puget-sound-marine-forecast"
 version = "2.0.0"
 description = "Marine forecast service for Puget Sound — REST API, MCP server, and web UI"
 requires-python = ">=3.12"
-license = { text = "MIT" }
+license = "MIT"
 
 dependencies = [
     "fastapi>=0.135.0",
