@@ -17,7 +17,7 @@ import {
   useSensors,
 } from "@dnd-kit/core";
 import type { DragEndEvent } from "@dnd-kit/core";
-import { SortableContext, sortableKeyboardCoordinates } from "@dnd-kit/sortable";
+import { SortableContext, sortableKeyboardCoordinates, arrayMove } from "@dnd-kit/sortable";
 
 function loadPinned(): string[] {
   try {
@@ -135,39 +135,58 @@ export default function Dashboard() {
       const draggedId = active.id as string;
       const overId = over.id as string;
 
-      // Determine which section each item belongs to
       const draggedPinned = pinned.includes(draggedId);
       const overPinned = pinned.includes(overId);
 
-      // If dragging between pinned and a region section, pin/unpin
+      // Cross-section: pin/unpin
       if (draggedPinned && !overPinned) {
-        // Dragged out of pinned → unpin
         const newPinned = pinned.filter((id) => id !== draggedId);
         setPinned(newPinned);
         savePinned(newPinned);
         return;
       }
       if (!draggedPinned && overPinned) {
-        // Dragged into pinned → pin
         const newPinned = [...pinned, draggedId];
         setPinned(newPinned);
         savePinned(newPinned);
         return;
       }
 
-      // Reorder within the same section
+      // Same-section reorder: work with the section's own ID list
       const forecasts = buildOrderedForecasts(data.forecasts, pinned, order);
-      const ids = forecasts.map((f) => f.zone_id);
-      const oldIndex = ids.indexOf(draggedId);
-      const newIndex = ids.indexOf(overId);
+      const pinnedSet = new Set(pinned);
+
+      let sectionIds: string[];
+      if (draggedPinned) {
+        sectionIds = forecasts.filter((f) => pinnedSet.has(f.zone_id)).map((f) => f.zone_id);
+      } else {
+        const region = getZoneRegion(draggedId);
+        sectionIds = forecasts
+          .filter((f) => !pinnedSet.has(f.zone_id) && getZoneRegion(f.zone_id) === region)
+          .map((f) => f.zone_id);
+      }
+
+      const oldIndex = sectionIds.indexOf(draggedId);
+      const newIndex = sectionIds.indexOf(overId);
       if (oldIndex === -1 || newIndex === -1) return;
 
-      const newIds = [...ids];
-      newIds.splice(oldIndex, 1);
-      newIds.splice(newIndex, 0, draggedId);
+      const reorderedSection = arrayMove(sectionIds, oldIndex, newIndex);
 
-      setOrder(newIds);
-      saveOrder(newIds);
+      // Rebuild the full order: replace the section's slice with reordered version
+      const fullIds = forecasts.map((f) => f.zone_id);
+      const sectionSet = new Set(sectionIds);
+      const newFullIds: string[] = [];
+      let sectionCursor = 0;
+      for (const id of fullIds) {
+        if (sectionSet.has(id)) {
+          newFullIds.push(reorderedSection[sectionCursor++]);
+        } else {
+          newFullIds.push(id);
+        }
+      }
+
+      setOrder(newFullIds);
+      saveOrder(newFullIds);
     },
     [data, pinned, order],
   );
