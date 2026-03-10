@@ -37,27 +37,23 @@ export default function ZoneDetail() {
       <AdvisoryBadges forecast={forecast} />
 
       {forecast.advisory_text && (
-        <div className="card card-danger section-gap">
-          <div className="card-title" style={{ color: "var(--warning)", marginBottom: "0.5rem" }}>
-            Advisory
-          </div>
-          <div style={{ fontSize: "0.9rem" }}>{forecast.advisory_text}</div>
+        <div className="card card-advisory section-gap">
+          <div className="card-title">Advisory</div>
+          <div className="advisory-body">{forecast.advisory_text}</div>
         </div>
       )}
 
       <div className="card section-gap">
-        <div className="card-title" style={{ marginBottom: "0.75rem" }}>
-          Forecast
-        </div>
-        <div className="forecast-text" style={{ maxHeight: "none" }}>
+        <div className="card-title">Forecast</div>
+        <div className="forecast-text forecast-text-full">
           {forecast.forecast_text}
         </div>
       </div>
 
       <div className="status-bar">
-        <span>Issued: {fmtTime(forecast.issued)}</span>
-        <span>Expires: {fmtTime(forecast.expires)}</span>
-        <span>Fetched: {fmtTime(forecast.fetched_at)}</span>
+        <span><span aria-hidden="true">📋</span> Issued: {fmtTime(forecast.issued)}</span>
+        <span><span aria-hidden="true">⏳</span> Expires: {fmtTime(forecast.expires)}</span>
+        <span><span aria-hidden="true">🔄</span> Fetched: {fmtTime(forecast.fetched_at)}</span>
       </div>
     </>
   );
