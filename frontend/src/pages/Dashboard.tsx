@@ -242,7 +242,7 @@ export default function Dashboard() {
 
       {data.errors && data.errors.length > 0 && (
         <>
-          <div className="section-label" style={{ color: "var(--danger)" }}>
+          <div className="section-label section-label-danger">
             Failed Zones
           </div>
           <div className="zone-grid">

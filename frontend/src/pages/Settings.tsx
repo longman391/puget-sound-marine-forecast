@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { api } from "../api";
 import type { CacheStatus, ServerSettings } from "../api";
+import { fmtTime } from "../utils/time";
 
 export default function Settings() {
   const [status, setStatus] = useState<CacheStatus | null>(null);
@@ -22,13 +23,12 @@ export default function Settings() {
   return (
     <>
       <div className="page-header">
-        <h2>Server Settings & Status</h2>
+        <h2>Server Settings &amp; Status</h2>
+        <p>Cache health, configuration, and API access</p>
       </div>
 
       <div className="card section-gap">
-        <div className="card-title" style={{ marginBottom: "1rem" }}>
-          Cache Status
-        </div>
+        <div className="card-section-title">Cache Status</div>
         <div className="settings-grid">
           <div className="setting-row">
             <span className="setting-label">Health</span>
@@ -52,19 +52,11 @@ export default function Settings() {
           </div>
           <div className="setting-row">
             <span className="setting-label">Last Updated</span>
-            <span className="setting-value">
-              {status.last_updated
-                ? new Date(status.last_updated).toLocaleString()
-                : "—"}
-            </span>
+            <span className="setting-value">{fmtTime(status.last_updated)}</span>
           </div>
           <div className="setting-row">
             <span className="setting-label">Next Update</span>
-            <span className="setting-value">
-              {status.next_update
-                ? new Date(status.next_update).toLocaleString()
-                : "—"}
-            </span>
+            <span className="setting-value">{fmtTime(status.next_update)}</span>
           </div>
           <div className="setting-row">
             <span className="setting-label">Total Refreshes</span>
@@ -82,9 +74,7 @@ export default function Settings() {
       </div>
 
       <div className="card section-gap">
-        <div className="card-title" style={{ marginBottom: "1rem" }}>
-          Configuration
-        </div>
+        <div className="card-section-title">Configuration</div>
         <div className="settings-grid">
           <div className="setting-row">
             <span className="setting-label">Cache Interval</span>
@@ -121,11 +111,11 @@ export default function Settings() {
         </div>
       </div>
 
-      <div className="card section-gap" style={{ marginBottom: "2rem" }}>
-        <label htmlFor="api-key-input" className="card-title" style={{ display: "block", marginBottom: "0.5rem" }}>
+      <div className="card section-gap page-bottom">
+        <label htmlFor="api-key-input" className="card-title">
           API Key
         </label>
-        <p id="api-key-help" style={{ color: "var(--text-muted)", fontSize: "0.85rem", marginBottom: "0.75rem" }}>
+        <p id="api-key-help" className="help-text">
           If the server has auth enabled, enter your API key here. It will be
           stored in your browser's localStorage.
         </p>

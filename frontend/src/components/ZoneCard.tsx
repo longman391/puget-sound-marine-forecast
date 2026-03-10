@@ -54,7 +54,7 @@ export function ZoneCard({ forecast: f, isPinned, onTogglePin }: Props) {
             >
               {isPinned ? "📌" : "📍"}
             </button>
-            <span className="setting-value">{f.zone_id}</span>
+            <span className="mono-label">{f.zone_id}</span>
           </div>
         </div>
         <Link to={`/zone/${f.zone_id}`} className="card-body-link">
