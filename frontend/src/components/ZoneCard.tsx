@@ -1,4 +1,5 @@
 import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { Link } from "react-router-dom";
 import type { ZoneForecast } from "../api";
 import { AdvisoryBadges } from "./AdvisoryBadges";
@@ -10,9 +11,17 @@ interface Props {
 }
 
 export function ZoneCard({ forecast: f, isPinned, onTogglePin }: Props) {
-  const { attributes, listeners, setNodeRef, isDragging } = useSortable({
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: f.zone_id,
   });
+
+  const style: React.CSSProperties = {
+    transform: CSS.Translate.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 10 : undefined,
+    position: "relative" as const,
+  };
 
   const cardClass = [
     "card",
@@ -23,7 +32,7 @@ export function ZoneCard({ forecast: f, isPinned, onTogglePin }: Props) {
     .join(" ");
 
   return (
-    <div ref={setNodeRef} className="card-link">
+    <div ref={setNodeRef} style={style} className="card-link">
       <div className={cardClass}>
         <div className="card-header">
           <div className="card-header-left">
@@ -54,7 +63,7 @@ export function ZoneCard({ forecast: f, isPinned, onTogglePin }: Props) {
             >
               {isPinned ? "📌" : "📍"}
             </button>
-            <span className="setting-value">{f.zone_id}</span>
+            <span className="mono-label">{f.zone_id}</span>
           </div>
         </div>
         <Link to={`/zone/${f.zone_id}`} className="card-body-link">
