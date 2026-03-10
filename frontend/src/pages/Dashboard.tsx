@@ -1,8 +1,11 @@
 import { useEffect, useState, useCallback } from "react";
+import toast from "react-hot-toast";
 import { api } from "../api";
 import type { AllForecastsResponse, CacheStatus, ZoneForecast } from "../api";
 import { fmtTime, timeAgo } from "../utils/time";
 import { ZoneCard } from "../components/ZoneCard";
+import { SkeletonCards } from "../components/SkeletonCards";
+import { FailedZoneCard } from "../components/FailedZoneCard";
 import {
   DndContext,
   closestCenter,
@@ -102,8 +105,10 @@ export default function Dashboard() {
     try {
       await api.refresh();
       load();
+      toast.success("Forecasts updated");
     } catch (e: any) {
       setError(e.message);
+      toast.error(`Refresh failed: ${e.message}`);
     } finally {
       setRefreshing(false);
     }
@@ -159,7 +164,16 @@ export default function Dashboard() {
   );
 
   if (error && !data) return <div className="error-msg">Error: {error}</div>;
-  if (!data) return <div className="loading">Loading forecasts…</div>;
+  if (!data)
+    return (
+      <>
+        <div className="page-header">
+          <h2>Marine Forecast Dashboard</h2>
+          <p>Puget Sound &amp; Washington Coastal Waters</p>
+        </div>
+        <SkeletonCards count={6} />
+      </>
+    );
 
   const forecasts = buildOrderedForecasts(data.forecasts, pinned, order);
   const pinnedSet = new Set(pinned);
@@ -178,7 +192,10 @@ export default function Dashboard() {
         <span aria-label="Zones available">
           <span aria-hidden="true">🟢</span> {data.successful}/{data.total_zones} zones
         </span>
-        <span aria-label={`Last updated ${fmtTime(data.cache_last_updated)}`}>
+        <span
+          aria-label={`Last updated ${fmtTime(data.cache_last_updated)}`}
+          title={fmtTime(data.cache_last_updated)}
+        >
           <span aria-hidden="true">🕐</span> Updated {timeAgo(data.cache_last_updated)}
         </span>
         {status && (
@@ -222,6 +239,19 @@ export default function Dashboard() {
           </div>
         </SortableContext>
       </DndContext>
+
+      {data.errors && data.errors.length > 0 && (
+        <>
+          <div className="section-label" style={{ color: "var(--danger)" }}>
+            Failed Zones
+          </div>
+          <div className="zone-grid">
+            {data.errors.map((e) => (
+              <FailedZoneCard key={e.zone_id} zoneId={e.zone_id} error={e.error} />
+            ))}
+          </div>
+        </>
+      )}
     </>
   );
 }
