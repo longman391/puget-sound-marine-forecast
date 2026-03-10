@@ -15,12 +15,10 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PORT=8000
 
-# Install only runtime deps (no gcc needed for pure-Python packages)
+# Copy source and config, then install
 COPY pyproject.toml ./
-RUN pip install --no-cache-dir . && pip cache purge
-
-# Copy source code
 COPY src/ ./src/
+RUN pip install --no-cache-dir . && pip cache purge
 
 # Copy built frontend
 COPY --from=frontend-build /frontend/dist ./frontend/dist
