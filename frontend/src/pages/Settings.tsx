@@ -18,9 +18,8 @@ function validateUrl(value: string): string | null {
   if (!value.trim()) return "URL is required";
   if (!/^https?:\/\//.test(value)) return "Must start with http:// or https://";
   const bad = ["<", ">", '"', "'", "`", "${", "{{", "javascript:", "data:"];
-  for (const p of bad) {
-    if (value.includes(p)) return `Invalid character or pattern: ${p}`;
-  }
+  const found = bad.find((p) => value.includes(p));
+  if (found) return `Invalid character or pattern: ${found}`;
   return null;
 }
 

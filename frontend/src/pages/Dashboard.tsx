@@ -19,29 +19,22 @@ import {
 import type { DragEndEvent } from "@dnd-kit/core";
 import { SortableContext, sortableKeyboardCoordinates, arrayMove } from "@dnd-kit/sortable";
 
-function loadPinned(): string[] {
+function loadJson<T>(key: string, fallback: T): T {
   try {
-    return JSON.parse(localStorage.getItem("pinned_zones") || "[]");
+    return JSON.parse(localStorage.getItem(key) || JSON.stringify(fallback));
   } catch {
-    return [];
+    return fallback;
   }
 }
 
-function loadOrder(): string[] {
-  try {
-    return JSON.parse(localStorage.getItem("zone_order") || "[]");
-  } catch {
-    return [];
-  }
+function saveJson<T>(key: string, value: T) {
+  localStorage.setItem(key, JSON.stringify(value));
 }
 
-function savePinned(pinned: string[]) {
-  localStorage.setItem("pinned_zones", JSON.stringify(pinned));
-}
-
-function saveOrder(order: string[]) {
-  localStorage.setItem("zone_order", JSON.stringify(order));
-}
+const loadPinned = () => loadJson<string[]>("pinned_zones", []);
+const loadOrder = () => loadJson<string[]>("zone_order", []);
+const savePinned = (v: string[]) => saveJson("pinned_zones", v);
+const saveOrder = (v: string[]) => saveJson("zone_order", v);
 
 function buildOrderedForecasts(
   forecasts: ZoneForecast[],
@@ -210,10 +203,10 @@ export default function Dashboard() {
 
   // Group unpinned forecasts by region
   const regionGroups: { region: ZoneRegion; items: ZoneForecast[] }[] = [];
-  const salishSea = unpinnedForecasts.filter((f) => getZoneRegion(f.zone_id) === "salish-sea");
-  const coastal = unpinnedForecasts.filter((f) => getZoneRegion(f.zone_id) === "coastal");
-  if (salishSea.length > 0) regionGroups.push({ region: "salish-sea", items: salishSea });
-  if (coastal.length > 0) regionGroups.push({ region: "coastal", items: coastal });
+  for (const region of ["salish-sea", "coastal"] as const) {
+    const items = unpinnedForecasts.filter((f) => getZoneRegion(f.zone_id) === region);
+    if (items.length > 0) regionGroups.push({ region, items });
+  }
 
   // Build sortable ID lists: pinned IDs + each region's IDs (separate contexts)
   const pinnedIds = pinnedForecasts.map((f) => f.zone_id);
@@ -225,7 +218,7 @@ export default function Dashboard() {
         <p>Puget Sound &amp; Washington Coastal Waters</p>
       </div>
 
-      <div className="status-bar">
+      <div className="status-bar" aria-live="polite">
         <span aria-label="Zones available">
           <span aria-hidden="true">🟢</span> {data.successful}/{data.total_zones} zones
         </span>
