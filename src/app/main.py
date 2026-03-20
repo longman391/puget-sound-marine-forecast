@@ -31,17 +31,15 @@ async def lifespan(app: FastAPI):
     logger.info("Starting Puget Sound Marine Forecast API v%s", __version__)
     await cache.start_background_refresh()
 
-    # Initialize MCP session manager if MCP is enabled
-    if settings.mcp_enabled:
-        from app.mcp.server import mcp_server
+    try:
+        if settings.mcp_enabled:
+            from app.mcp.server import mcp_server
 
-        async with mcp_server.session_manager.run():
+            async with mcp_server.session_manager.run():
+                yield
+        else:
             yield
-            logger.info("Shutting down...")
-            await cache.stop_background_refresh()
-            await close_client()
-    else:
-        yield
+    finally:
         logger.info("Shutting down...")
         await cache.stop_background_refresh()
         await close_client()

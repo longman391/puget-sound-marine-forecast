@@ -11,7 +11,7 @@ from datetime import UTC, datetime
 
 from dateutil import parser as dateutil_parser
 
-from app.models import ZONES
+from app.models import ZONES, SynopsisResponse
 
 logger = logging.getLogger(__name__)
 
@@ -46,16 +46,12 @@ def parse_zone_forecast(
 
     has_active = False
     has_upcoming = False
-    advisory_texts: list[str] = []
 
     for adv in advisories:
-        advisory_texts.append(adv)
-        is_upcoming = bool(_UPCOMING_PHRASES.search(adv))
-        # Any advisory that isn't explicitly upcoming is treated as active
-        if not is_upcoming:
-            has_active = True
-        if is_upcoming:
+        if _UPCOMING_PHRASES.search(adv):
             has_upcoming = True
+        else:
+            has_active = True
 
     return {
         "zone_id": zone_id_upper,
@@ -65,15 +61,13 @@ def parse_zone_forecast(
         "forecast_text": forecast_text,
         "has_active_advisory": has_active,
         "has_upcoming_advisory": has_upcoming,
-        "advisory_text": "\n".join(advisory_texts) if advisory_texts else None,
+        "advisory_text": "\n".join(advisories) if advisories else None,
         "fetched_at": fetched_at,
     }
 
 
 def parse_synopsis(raw_html: str, fetched_at: datetime):
     """Parse the UW combined forecast HTML to extract the synopsis section."""
-    from app.models import SynopsisResponse
-
     synopsis_match = re.search(
         r"PZZ100.*?<blockquote>(.*?)</blockquote>",
         raw_html,

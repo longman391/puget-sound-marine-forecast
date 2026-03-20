@@ -16,17 +16,22 @@ export default function App() {
             background: "var(--surface)",
             color: "var(--text)",
             border: "1px solid var(--border)",
+            borderRadius: "var(--radius)",
+            boxShadow: "var(--shadow-card)",
           },
           success: { duration: 3000 },
           error: { duration: 5000 },
         }}
       />
-      <nav>
+      <a href="#main-content" className="skip-nav">
+        Skip to content
+      </a>
+      <nav aria-label="Main navigation">
         <div className="container">
           <h1>
             <span aria-hidden="true">⚓</span> Marine Forecast
           </h1>
-          <div className="nav-links">
+          <div className="nav-links" role="navigation">
             <NavLink to="/" end>
               Dashboard
             </NavLink>
@@ -34,7 +39,7 @@ export default function App() {
           </div>
         </div>
       </nav>
-      <main className="container">
+      <main id="main-content" className="container">
         <div key={location.pathname} className="page-transition">
           <Routes location={location}>
             <Route path="/" element={<Dashboard />} />

@@ -28,7 +28,10 @@ export default function ZoneDetail() {
     <>
       <div className="page-header">
         <Link to="/" className="detail-back">
-          ← Back to Dashboard
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M10 12L6 8l4-4" />
+          </svg>
+          Back to Dashboard
         </Link>
         <h2>{forecast.zone_name}</h2>
         <p>{forecast.zone_id}</p>

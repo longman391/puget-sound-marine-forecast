@@ -83,11 +83,14 @@ class ForecastCache:
         new_errors: dict[str, str] = {}
 
         # Fetch all zones concurrently
-        tasks = {zone_id: fetch_zone_text(zone_id) for zone_id in ZONES}
-        results = await asyncio.gather(*tasks.values(), return_exceptions=True)
+        zone_ids = list(ZONES.keys())
+        results = await asyncio.gather(
+            *[fetch_zone_text(zid) for zid in zone_ids],
+            return_exceptions=True,
+        )
 
         fetched_at = datetime.now()
-        for zone_id, result in zip(tasks.keys(), results):
+        for zone_id, result in zip(zone_ids, results):
             if isinstance(result, Exception):
                 error_msg = f"{type(result).__name__}: {result}"
                 logger.warning("Failed to fetch zone %s: %s", zone_id, error_msg)
@@ -102,15 +105,11 @@ class ForecastCache:
                 logger.warning("Failed to parse zone %s: %s", zone_id, error_msg)
                 new_errors[zone_id] = error_msg
 
-        # Update cache (stale-while-revalidate: only replace zones that succeeded)
-        for zone_id, forecast in new_forecasts.items():
-            self._forecasts[zone_id] = forecast
-
-        # Clear errors for zones that succeeded this time, keep errors for new failures
+        # Stale-while-revalidate: only replace zones that succeeded
+        self._forecasts.update(new_forecasts)
         for zone_id in new_forecasts:
             self._errors.pop(zone_id, None)
-        for zone_id, error in new_errors.items():
-            self._errors[zone_id] = error
+        self._errors.update(new_errors)
 
         # Fetch synopsis (non-critical; don't fail the whole refresh)
         try:
