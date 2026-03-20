@@ -1,6 +1,28 @@
-# Deployment Guide
+# Deployment
 
-## Docker (any host)
+The application is packaged as a single Docker image that serves both the API and the React frontend. The multi-stage Dockerfile builds the frontend with Node 22, then bundles everything into a Python 3.12 slim image. It runs as a non-root user and includes a built-in healthcheck.
+
+Published images support `linux/amd64` and `linux/arm64`.
+
+## Docker Compose (recommended)
+
+Clone the repo, copy the example config, and start the service:
+
+```bash
+cp .env.example .env
+# Edit .env — at minimum, set API_KEY if you want auth enabled
+docker compose up -d --build
+```
+
+The service will be available at `http://localhost:8000`.
+
+To use the pre-built image from GHCR instead of building locally, replace the `build: .` line in `docker-compose.yml` with:
+
+```yaml
+image: ghcr.io/longman391/puget-sound-marine-forecast:latest
+```
+
+## Docker Run (standalone)
 
 ```bash
 docker run -d \
@@ -12,81 +34,74 @@ docker run -d \
   ghcr.io/longman391/puget-sound-marine-forecast:latest
 ```
 
-Or with docker-compose (clone the repo first):
-
-```bash
-cp .env.example .env
-# Edit .env with your settings
-docker compose up -d
-```
+See the [Configuration table in README.md](README.md#configuration) for all available environment variables.
 
 ## Unraid
 
-### Option A: Community Applications (when published)
+Three options, from easiest to most manual.
 
-1. Open the **Apps** tab in Unraid
-2. Search for "Puget Sound Marine Forecast"
-3. Click **Install** and configure the template variables
-4. Click **Apply**
+### Option A: Community Applications
 
-### Option B: Manual install via template URL
+1. Open the **Apps** tab in Unraid.
+2. Search for "Puget Sound Marine Forecast".
+3. Click **Install** and configure the template variables.
+4. Click **Apply**.
 
-1. Go to **Docker** → **Add Container**
-2. Click **Template Repositories** at the bottom
+### Option B: Template URL
+
+1. Go to **Docker** > **Add Container**.
+2. Click **Template Repositories** at the bottom.
 3. Add: `https://github.com/longman391/puget-sound-marine-forecast`
-4. Click **Save**, then select "PugetSoundMarineForecast" from the template dropdown
-5. Configure variables and click **Apply**
+4. Click **Save**, then select "PugetSoundMarineForecast" from the template dropdown.
+5. Configure variables and click **Apply**.
 
-### Option C: Manual Docker install on Unraid
+### Option C: Manual
 
-1. Go to **Docker** → **Add Container**
-2. Set **Repository** to `ghcr.io/longman391/puget-sound-marine-forecast:latest`
-3. Add a port mapping: Host `8000` → Container `8000`
-4. Add environment variables as needed (see Configuration below)
-5. Click **Apply**
+1. Go to **Docker** > **Add Container**.
+2. Set **Repository** to `ghcr.io/longman391/puget-sound-marine-forecast:latest`.
+3. Add a port mapping: Host `8000` > Container `8000`.
+4. Add environment variables as needed.
+5. Click **Apply**.
 
-## Making it Internet-Facing (forecast.longmanhome.com)
+The Unraid XML template is in `unraid/puget-sound-marine-forecast.xml`.
 
-For Dakboard, external agents, or public access, the service needs to be reachable
-from the internet. Here are three approaches, from simplest to most flexible:
+## Exposing to the Internet
 
-### Option 1: Cloudflare Tunnel (recommended)
+For external access (Dakboard, remote agents, etc.), the service needs to be reachable from outside your network.
 
-The safest way to expose a home-hosted service — no port forwarding required.
+### Cloudflare Tunnel (recommended)
 
-1. Install `cloudflared` on your Unraid server (available as a Docker container)
+No port forwarding required. No ports exposed on your router.
+
+1. Install `cloudflared` on your server (available as a Docker container on Unraid).
 2. Create a tunnel: `cloudflared tunnel create marine-forecast`
-3. Configure the tunnel to point `forecast.longmanhome.com` → `http://localhost:8000`
-4. Add a CNAME record in Cloudflare DNS pointing to the tunnel
+3. Configure the tunnel to route your hostname to `http://localhost:8000`.
+4. Add a CNAME record in Cloudflare DNS pointing to the tunnel.
 
 ```yaml
 # cloudflared config.yml
 tunnel: <tunnel-id>
 credentials-file: /root/.cloudflared/<tunnel-id>.json
 ingress:
-  - hostname: forecast.longmanhome.com
+  - hostname: forecast.yourdomain.com
     service: http://localhost:8000
   - service: http_status:404
 ```
 
-**Pros:** No ports exposed, automatic HTTPS, Cloudflare DDoS protection.
-**Cons:** Requires a Cloudflare account and domain managed by Cloudflare.
+### Nginx Proxy Manager
 
-### Option 2: Nginx Proxy Manager (Unraid)
+If you already run Nginx Proxy Manager (common on Unraid):
 
-If you already run Nginx Proxy Manager on Unraid:
+1. Add a proxy host for your forecast domain.
+2. Forward to your server's IP on port `8000`.
+3. Enable SSL via Let's Encrypt.
+4. Set up port forwarding on your router: external 443 to NPM's port.
 
-1. Add a new proxy host for `forecast.longmanhome.com`
-2. Set the forward hostname/IP to the Unraid server IP and port `8000`
-3. Enable SSL via Let's Encrypt
-4. Set up port forwarding on your router: external 443 → Unraid NPM port
+### Cloud Deployment
 
-### Option 3: Azure Container App (secondary deployment)
-
-Deploy the same Docker image to Azure as a secondary target:
+The same Docker image runs on any container hosting platform. Example with Azure Container Apps:
 
 ```bash
-# One-time setup
 az containerapp up \
   --name marine-forecast \
   --resource-group marine-forecast-rg \
@@ -94,14 +109,11 @@ az containerapp up \
   --target-port 8000 \
   --env-vars API_KEY=your-key CACHE_INTERVAL_MINUTES=60 \
   --ingress external
-
-# Point forecast.longmanhome.com to the Azure FQDN via CNAME
 ```
 
-**Pros:** Always available, no home network dependency.
-**Cons:** Costs money (Azure Container Apps consumption plan is ~$0-5/month for low traffic).
+Point your domain to the Azure FQDN via CNAME. Consumption plan costs are minimal for low-traffic services.
 
-## Authentication for External Clients
+## Client Integration
 
 ### Home Assistant
 
@@ -110,7 +122,7 @@ az containerapp up \
 sensor:
   - platform: rest
     name: puget_sound_forecast
-    resource: https://forecast.longmanhome.com/api/v1/forecast/PZZ135
+    resource: https://forecast.yourdomain.com/api/v1/forecast/PZZ135
     headers:
       X-API-Key: your-api-key
     value_template: "{{ value_json.has_active_advisory }}"
@@ -125,23 +137,46 @@ sensor:
 
 ### Dakboard
 
-Dakboard REST widgets use URL-based auth:
+Dakboard REST widgets support URL-based auth:
 
 ```
-https://forecast.longmanhome.com/api/v1/forecast/PZZ135?api_key=your-api-key
+https://forecast.yourdomain.com/api/v1/forecast/PZZ135?api_key=your-api-key
 ```
 
-Configure as a "Custom" widget with JSON path to extract the fields you want.
+Configure as a "Custom" widget and use JSON path expressions to extract the fields you need.
 
-## Publishing to Unraid Community Apps Store
+### MCP Clients
 
-When ready to publish to the official Community Apps store:
+Point any MCP-compatible client (Claude Desktop, Cursor, etc.) at:
 
-1. Ensure the Docker image is publicly available on GHCR (it will be after the
-   first `publish.yml` workflow run)
-2. Create an Unraid forum support thread for the app
-3. Update the `<Support>` URL in `unraid/puget-sound-marine-forecast.xml`
-4. Submit the template to the Community Applications maintainers via the
-   [Unraid forums](https://forums.unraid.net/forum/38-docker-containers/)
-5. Optionally create a dedicated template repo (`longman391/unraid-templates`)
-   with just the XML file, if the CA team prefers that structure
+```
+https://forecast.yourdomain.com/mcp
+```
+
+The MCP server uses stateless HTTP transport. No additional configuration is needed beyond the URL. If `API_KEY` is set, the MCP endpoint still requires auth through the standard header or query parameter.
+
+## CI/CD
+
+The GitHub Actions workflows handle testing and publishing:
+
+- **ci.yml** — Runs on pushes to `main`/`dev` and PRs to `main`. Lints, type-checks, tests (Python 3.12 and 3.13 matrix), and builds the Docker image.
+- **publish.yml** — Triggered by version tags (`v*`) or manual dispatch. Builds multi-platform images and pushes to GHCR with semver tags.
+
+To publish a new release:
+
+```bash
+git tag v2.1.0
+git push origin v2.1.0
+```
+
+The publish workflow will build and push `ghcr.io/longman391/puget-sound-marine-forecast:2.1.0`, `:2.1`, and `:latest`.
+
+## Publishing to Unraid Community Apps
+
+When ready to list in the Community Apps store:
+
+1. Ensure the Docker image is publicly available on GHCR (happens automatically after the first `publish.yml` run).
+2. Create an Unraid forum support thread for the app.
+3. Update the `<Support>` URL in `unraid/puget-sound-marine-forecast.xml`.
+4. Submit the template to the Community Applications maintainers via the [Unraid forums](https://forums.unraid.net/forum/38-docker-containers/).
+5. Optionally create a dedicated template repo (`longman391/unraid-templates`) with the XML file, if the CA team prefers that structure.
