@@ -1,5 +1,7 @@
 """API key authentication dependency."""
 
+import hmac
+
 from fastapi import Depends, HTTPException, Query, Request, status
 from fastapi.security import APIKeyHeader
 
@@ -18,7 +20,7 @@ async def require_api_key(
         return
 
     provided_key = header_key or query_key
-    if not provided_key or provided_key != settings.api_key:
+    if not provided_key or not hmac.compare_digest(provided_key, settings.api_key):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or missing API key",

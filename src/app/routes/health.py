@@ -1,11 +1,11 @@
 """Health and status endpoints."""
 
-from datetime import datetime
+from datetime import UTC, datetime
 
 from fastapi import APIRouter
 
 from app.config import settings
-from app.models import CacheStatus, HealthResponse
+from app.models import ZONES, CacheStatus, HealthResponse
 from app.services.cache import cache
 
 router = APIRouter(prefix="/api/v1", tags=["health"])
@@ -15,13 +15,13 @@ router = APIRouter(prefix="/api/v1", tags=["health"])
 async def health_check() -> HealthResponse:
     """Health check endpoint — always unauthenticated."""
     status_str = "healthy" if cache.is_ready else "unhealthy"
-    return HealthResponse(status=status_str, timestamp=datetime.now())
+    return HealthResponse(status=status_str, timestamp=datetime.now(tz=UTC))
 
 
 @router.get("/status", response_model=CacheStatus)
 async def cache_status() -> CacheStatus:
     """Detailed cache health and statistics."""
-    total = cache.zones_cached + cache.zones_failed
+    total = len(ZONES)
     if total == 0:
         health = "unhealthy"
     elif cache.zones_cached >= total * 0.8:

@@ -16,7 +16,7 @@ from app.models import ZONES, SynopsisResponse
 logger = logging.getLogger(__name__)
 
 # Advisory banners appear on a single line between triple-dot markers: ...TEXT...
-_ADVISORY_PATTERN = re.compile(r"\.\.\.(.*?)\.\.\.")
+_ADVISORY_PATTERN = re.compile(r"\.\.\.(.*?)\.\.\.", re.DOTALL)
 
 # Keywords that indicate an advisory/warning/watch
 _ADVISORY_KEYWORDS = {"ADVISORY", "WARNING", "WATCH", "STATEMENT", "ALERT"}

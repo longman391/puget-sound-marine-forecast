@@ -2,7 +2,7 @@
 
 import asyncio
 import logging
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 from app.config import settings
 from app.models import ZONES, SynopsisResponse, ZoneForecast
@@ -76,7 +76,7 @@ class ForecastCache:
 
     async def refresh(self) -> None:
         """Fetch and cache all zone forecasts and synopsis."""
-        start = datetime.now()
+        start = datetime.now(tz=UTC)
         logger.info("Starting forecast cache refresh...")
 
         new_forecasts: dict[str, ZoneForecast] = {}
@@ -89,7 +89,7 @@ class ForecastCache:
             return_exceptions=True,
         )
 
-        fetched_at = datetime.now()
+        fetched_at = datetime.now(tz=UTC)
         for zone_id, result in zip(zone_ids, results):
             if isinstance(result, Exception):
                 error_msg = f"{type(result).__name__}: {result}"
@@ -118,7 +118,7 @@ class ForecastCache:
         except Exception as e:
             logger.warning("Failed to fetch synopsis: %s", e)
 
-        end = datetime.now()
+        end = datetime.now(tz=UTC)
         duration = (end - start).total_seconds()
 
         self._last_updated = end
