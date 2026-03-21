@@ -70,7 +70,7 @@ def get_synopsis() -> dict:
     synopsis = cache.get_synopsis()
     if synopsis is None:
         return {"error": "Synopsis not yet available. Cache is loading."}
-    return synopsis
+    return synopsis.model_dump(mode="json")
 
 
 @mcp_server.tool()

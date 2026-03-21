@@ -1,76 +1,13 @@
 import { useEffect, useState } from "react";
 import { api } from "../api";
 import type { CacheStatus, ServerSettings } from "../api";
-import { useLocalSettings } from "../hooks/useLocalSettings";
-import type { LocalSettings, SaveStatus } from "../hooks/useLocalSettings";
 import { fmtTime } from "../utils/time";
-
-const CACHE_INTERVAL_OPTIONS = [30, 60, 90, 120, 150, 180, 210, 240];
-const LOG_LEVEL_OPTIONS = ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"];
 
 function formatInterval(mins: number): string {
   if (mins < 60) return `${mins} minutes`;
   const h = mins / 60;
   return h === 1 ? "1 hour" : `${h} hours`;
 }
-
-function validateUrl(value: string): string | null {
-  if (!value.trim()) return "URL is required";
-  if (!/^https?:\/\//.test(value)) return "Must start with http:// or https://";
-  const bad = ["<", ">", '"', "'", "`", "${", "{{", "javascript:", "data:"];
-  const found = bad.find((p) => value.includes(p));
-  if (found) return `Invalid character or pattern: ${found}`;
-  return null;
-}
-
-function validateOrigins(value: string): string | null {
-  const trimmed = value.trim();
-  if (!trimmed) return "Origins are required";
-  if (trimmed === "*") return null;
-  const parts = trimmed.split(",").map((s) => s.trim());
-  for (const part of parts) {
-    if (part !== "*" && !/^https?:\/\//.test(part)) {
-      return `Invalid origin: "${part}" — must be * or start with http(s)://`;
-    }
-  }
-  return null;
-}
-
-function SaveIndicator({ status }: { status: SaveStatus }) {
-  if (status === "idle" || status === "saving") return null;
-  return (
-    <span
-      role="status"
-      className={`save-status ${status === "saved" ? "save-status-saved" : "save-status-error"}`}
-    >
-      {status === "saved" ? "✓ Saved" : "⚠ Save failed"}
-    </span>
-  );
-}
-
-function ResetButton({
-  field,
-  isChanged,
-  onReset,
-}: {
-  field: keyof LocalSettings;
-  isChanged: boolean;
-  onReset: (key: keyof LocalSettings) => void;
-}) {
-  if (!isChanged) return null;
-  return (
-    <button
-      className="reset-btn"
-      onClick={() => onReset(field)}
-      title="Reset to default"
-      aria-label={`Reset ${field} to default`}
-    >
-      ↺
-    </button>
-  );
-}
-
-/* --- Descriptions for each field (#19) --- */
 
 const STATUS_DESCRIPTIONS: Record<string, string> = {
   health: "Overall system health status",
@@ -107,75 +44,10 @@ function SettingLabel({
   );
 }
 
-/** Stacked text input with validation, reset button, and error display. */
-function ValidatedTextInput({
-  field,
-  id,
-  label,
-  description,
-  value,
-  validate,
-  error,
-  setError,
-  isChanged,
-  onSave,
-  onReset,
-}: {
-  field: keyof LocalSettings;
-  id: string;
-  label: string;
-  description: string;
-  value: string;
-  validate: (v: string) => string | null;
-  error: string | null;
-  setError: (e: string | null) => void;
-  isChanged: boolean;
-  onSave: (v: string) => void;
-  onReset: (k: keyof LocalSettings) => void;
-}) {
-  return (
-    <div className="setting-row setting-row-stacked">
-      <SettingLabel label={label} description={description} id={id} />
-      <div className="input-with-reset">
-        <input
-          className={`input ${error ? "input-error" : ""}`}
-          type="text"
-          value={value}
-          aria-labelledby={`${id}-label`}
-          aria-describedby={error ? `${id}-error` : `${id}-desc`}
-          aria-invalid={!!error}
-          onChange={(e) => {
-            const v = e.target.value;
-            const err = validate(v);
-            setError(err);
-            if (!err) onSave(v);
-          }}
-        />
-        <ResetButton
-          field={field}
-          isChanged={isChanged}
-          onReset={(k) => {
-            onReset(k);
-            setError(null);
-          }}
-        />
-      </div>
-      {error && (
-        <span className="error-text" id={`${id}-error`}>{error}</span>
-      )}
-    </div>
-  );
-}
-
 export default function Settings() {
   const [status, setStatus] = useState<CacheStatus | null>(null);
   const [settings, setSettings] = useState<ServerSettings | null>(null);
   const [error, setError] = useState("");
-  const { getValue, setValue, isChanged, resetValue, saveStatus } =
-    useLocalSettings(settings);
-
-  const [urlError, setUrlError] = useState<string | null>(null);
-  const [corsError, setCorsError] = useState<string | null>(null);
 
   useEffect(() => {
     Promise.all([api.status(), api.settings()])
@@ -192,14 +64,11 @@ export default function Settings() {
   return (
     <>
       <div className="page-header">
-        <h2>
-          Server Settings &amp; Status
-          <SaveIndicator status={saveStatus} />
-        </h2>
+        <h2>Server Settings &amp; Status</h2>
         <p>Cache health, configuration, and API access</p>
       </div>
 
-      {/* --- Cache Status (read-only) --- */}
+      {/* --- Cache Status --- */}
       <div className="card section-gap">
         <div className="card-section-title">Cache Status</div>
         <div className="settings-grid">
@@ -246,151 +115,37 @@ export default function Settings() {
         </div>
       </div>
 
-      {/* --- Configuration (editable) --- */}
+      {/* --- Configuration (read-only) --- */}
       <div className="card section-gap">
         <div className="card-section-title">Configuration</div>
+        <p className="setting-description" style={{ marginBottom: "0.75rem" }}>
+          These settings are controlled by environment variables. Restart the server to apply changes.
+        </p>
         <div className="settings-grid">
-          {/* Cache Interval — dropdown */}
           <div className="setting-row">
-            <SettingLabel
-              label="Cache Interval"
-              description={CONFIG_DESCRIPTIONS.cache_interval_minutes}
-              id="cfg-interval"
-            />
-            <span className="setting-value">
-              <select
-                className="input"
-                value={getValue("cache_interval_minutes") ?? settings.cache_interval_minutes}
-                aria-labelledby="cfg-interval-label"
-                aria-describedby="cfg-interval-desc"
-                onChange={(e) =>
-                  setValue("cache_interval_minutes", Number(e.target.value))
-                }
-              >
-                {CACHE_INTERVAL_OPTIONS.map((m) => (
-                  <option key={m} value={m}>
-                    {formatInterval(m)}
-                  </option>
-                ))}
-              </select>
-              <ResetButton
-                field="cache_interval_minutes"
-                isChanged={isChanged("cache_interval_minutes")}
-                onReset={resetValue}
-              />
-            </span>
+            <SettingLabel label="Cache Interval" description={CONFIG_DESCRIPTIONS.cache_interval_minutes} id="cfg-interval" />
+            <span className="setting-value">{formatInterval(settings.cache_interval_minutes)}</span>
           </div>
-
-          {/* Auth Enabled — read-only */}
           <div className="setting-row">
-            <SettingLabel
-              label="Auth Enabled"
-              description={CONFIG_DESCRIPTIONS.auth_enabled}
-              id="cfg-auth"
-            />
-            <span className="setting-value">
-              {settings.auth_enabled ? "Yes" : "No"}
-            </span>
+            <SettingLabel label="Auth Enabled" description={CONFIG_DESCRIPTIONS.auth_enabled} id="cfg-auth" />
+            <span className="setting-value">{settings.auth_enabled ? "Yes" : "No"}</span>
           </div>
-
-          {/* MCP Server — segmented control */}
           <div className="setting-row">
-            <SettingLabel
-              label="MCP Server"
-              description={CONFIG_DESCRIPTIONS.mcp_enabled}
-              id="cfg-mcp"
-            />
-            <span className="setting-value">
-              <div
-                className="segmented-control"
-                role="radiogroup"
-                aria-labelledby="cfg-mcp-label"
-              >
-                <label>
-                  <input
-                    type="radio"
-                    name="mcp_enabled"
-                    checked={getValue("mcp_enabled") === true}
-                    onChange={() => setValue("mcp_enabled", true)}
-                  />
-                  <span>Enabled</span>
-                </label>
-                <label>
-                  <input
-                    type="radio"
-                    name="mcp_enabled"
-                    checked={getValue("mcp_enabled") === false}
-                    onChange={() => setValue("mcp_enabled", false)}
-                  />
-                  <span>Disabled</span>
-                </label>
-              </div>
-              <ResetButton
-                field="mcp_enabled"
-                isChanged={isChanged("mcp_enabled")}
-                onReset={resetValue}
-              />
-            </span>
+            <SettingLabel label="MCP Server" description={CONFIG_DESCRIPTIONS.mcp_enabled} id="cfg-mcp" />
+            <span className="setting-value">{settings.mcp_enabled ? "Enabled" : "Disabled"}</span>
           </div>
-
-          {/* Log Level — dropdown */}
           <div className="setting-row">
-            <SettingLabel
-              label="Log Level"
-              description={CONFIG_DESCRIPTIONS.log_level}
-              id="cfg-loglevel"
-            />
-            <span className="setting-value">
-              <select
-                className="input"
-                value={getValue("log_level") ?? settings.log_level}
-                aria-labelledby="cfg-loglevel-label"
-                aria-describedby="cfg-loglevel-desc"
-                onChange={(e) => setValue("log_level", e.target.value)}
-              >
-                {LOG_LEVEL_OPTIONS.map((l) => (
-                  <option key={l} value={l}>
-                    {l}
-                  </option>
-                ))}
-              </select>
-              <ResetButton
-                field="log_level"
-                isChanged={isChanged("log_level")}
-                onReset={resetValue}
-              />
-            </span>
+            <SettingLabel label="Log Level" description={CONFIG_DESCRIPTIONS.log_level} id="cfg-loglevel" />
+            <span className="setting-value">{settings.log_level}</span>
           </div>
-
-          {/* NOAA Base URL — stacked text input */}
-          <ValidatedTextInput
-            field="noaa_base_url"
-            id="cfg-noaa"
-            label="NOAA Base URL"
-            description={CONFIG_DESCRIPTIONS.noaa_base_url}
-            value={(getValue("noaa_base_url") ?? settings.noaa_base_url) as string}
-            validate={validateUrl}
-            error={urlError}
-            setError={setUrlError}
-            isChanged={isChanged("noaa_base_url")}
-            onSave={(v) => setValue("noaa_base_url", v)}
-            onReset={resetValue}
-          />
-
-          {/* CORS Origins — stacked text input */}
-          <ValidatedTextInput
-            field="allowed_origins"
-            id="cfg-cors"
-            label="CORS Origins"
-            description={CONFIG_DESCRIPTIONS.allowed_origins}
-            value={(getValue("allowed_origins") ?? settings.allowed_origins.join(", ")) as string}
-            validate={validateOrigins}
-            error={corsError}
-            setError={setCorsError}
-            isChanged={isChanged("allowed_origins")}
-            onSave={(v) => setValue("allowed_origins", v)}
-            onReset={resetValue}
-          />
+          <div className="setting-row setting-row-stacked">
+            <SettingLabel label="NOAA Base URL" description={CONFIG_DESCRIPTIONS.noaa_base_url} id="cfg-noaa" />
+            <span className="setting-value mono-label">{settings.noaa_base_url}</span>
+          </div>
+          <div className="setting-row">
+            <SettingLabel label="CORS Origins" description={CONFIG_DESCRIPTIONS.allowed_origins} id="cfg-cors" />
+            <span className="setting-value">{settings.allowed_origins.join(", ")}</span>
+          </div>
         </div>
       </div>
 
