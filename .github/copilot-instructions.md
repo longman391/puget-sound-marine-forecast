@@ -100,4 +100,4 @@ docker compose up --build
 
 ## Deployment
 
-Docker container with `docker-compose.yml`. Targets Unraid servers as primary deployment, with optional cloud deployment. No Azure dependencies.
+Docker container with `docker-compose.yml`. Targets Unraid servers and other self-hosted Docker environments.

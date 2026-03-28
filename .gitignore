@@ -206,9 +206,6 @@ marimo/_static/
 marimo/_lsp/
 __marimo__/
 
-# Azure Developer CLI
-.azure/
-
 # Node / Frontend
 node_modules/
 frontend/dist/

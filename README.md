@@ -155,7 +155,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for local setup, testing, linting, and pr
 
 ## Deployment
 
-See [DEPLOYMENT.md](DEPLOYMENT.md) for Docker, Unraid, and cloud deployment instructions, plus integration examples for Home Assistant and Dakboard.
+See [DEPLOYMENT.md](DEPLOYMENT.md) for Docker, Unraid, remote access, and client integration examples.
 
 ## License
 

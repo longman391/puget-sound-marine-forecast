@@ -36,7 +36,6 @@ frontend/node_modules/
 
 # Infrastructure & docs
 infra/
-azure.yaml
 README.md
 LICENSE
 CONTRIBUTING.md

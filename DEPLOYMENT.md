@@ -97,21 +97,11 @@ If you already run Nginx Proxy Manager (common on Unraid):
 3. Enable SSL via Let's Encrypt.
 4. Set up port forwarding on your router: external 443 to NPM's port.
 
-### Cloud Deployment
+### Other Self-Hosted Docker Hosts
 
-The same Docker image runs on any container hosting platform. Example with Azure Container Apps:
-
-```bash
-az containerapp up \
-  --name marine-forecast \
-  --resource-group marine-forecast-rg \
-  --image ghcr.io/longman391/puget-sound-marine-forecast:latest \
-  --target-port 8000 \
-  --env-vars API_KEY=your-key CACHE_INTERVAL_MINUTES=60 \
-  --ingress external
-```
-
-Point your domain to the Azure FQDN via CNAME. Consumption plan costs are minimal for low-traffic services.
+The same Docker image can run on other self-hosted Docker environments if they let you publish
+port `8000` and provide the required environment variables. Use the Docker image and settings
+from this guide as the source of truth rather than any platform-specific template.
 
 ## Client Integration
 
