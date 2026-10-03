@@ -25,6 +25,21 @@ logger = logging.getLogger(__name__)
 FRONTEND_DIR = Path(__file__).resolve().parent.parent.parent / "frontend" / "dist"
 
 
+def _resolve_frontend_file(path: str) -> Path | None:
+    """Resolve a requested SPA file path, ensuring it stays under FRONTEND_DIR."""
+    frontend_root = FRONTEND_DIR.resolve()
+    requested_file = (frontend_root / path).resolve()
+
+    try:
+        requested_file.relative_to(frontend_root)
+    except ValueError:
+        return None
+
+    if requested_file.is_file():
+        return requested_file
+    return None
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Startup/shutdown lifecycle manager."""
@@ -96,8 +111,8 @@ def create_app() -> FastAPI:
         @app.get("/{path:path}")
         async def serve_spa(path: str):
             """Serve the React SPA — fallback to index.html for client-side routing."""
-            file = FRONTEND_DIR / path
-            if file.is_file():
+            file = _resolve_frontend_file(path)
+            if file is not None:
                 return FileResponse(file)
             return FileResponse(FRONTEND_DIR / "index.html")
 
